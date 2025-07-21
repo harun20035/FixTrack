@@ -4,6 +4,7 @@ from database import engine
 from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 from starlette.middleware.cors import CORSMiddleware
+from controllers.user_controller import router as user_router
 
 
 def create_db_and_tables():
@@ -30,6 +31,7 @@ def start_application():
     allow_headers=["*"]
     )
   
+  app.include_router(user_router)
   return app
 
 
