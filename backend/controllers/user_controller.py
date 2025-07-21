@@ -1,10 +1,14 @@
 from fastapi import APIRouter, Depends, status
 from sqlmodel import Session
-from database import get_session
+from database import engine
 from schemas.user_schema import UserRegister, UserLogin, UserRead
 from services import user_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+def get_session():
+    with Session(engine) as session:
+        yield session
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def register(user_data: UserRegister, session: Session = Depends(get_session)):
