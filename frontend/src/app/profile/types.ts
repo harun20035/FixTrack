@@ -1,15 +1,14 @@
 export interface UserProfile {
-  id: number
-  roleId: number
-  fullName: string
-  email: string
-  phone?: string
-  address?: string
-  createdAt: string
+  id: number;
+  full_name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  created_at: string;
   role: {
-    id: number
-    name: string
-  }
+    id: number;
+    name: string;
+  };
 }
 
 export interface ProfileFormData {

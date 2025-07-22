@@ -7,33 +7,19 @@ import CardContent from "@mui/material/CardContent"
 import Chip from "@mui/material/Chip"
 import { styled } from "@mui/material/styles"
 
+import type { UserProfile } from "../types";
+
+interface ProfileHeaderProps {
+  profile: UserProfile;
+}
+
 const ProfileCard = styled(Card)(() => ({
   background: "#1e1e1e",
   border: "1px solid #333",
   borderRadius: 16,
 }))
 
-interface UserProfile {
-  id: number
-  fullName: string
-  email: string
-  phone?: string
-  address?: string
-  role: string
-  createdAt: string
-}
-
-export default function ProfileHeader() {
-  // Mock data - u stvarnoj aplikaciji bi se dobijalo iz API-ja
-  const userProfile: UserProfile = {
-    id: 1,
-    fullName: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+387 33 123 456",
-    address: "Sarajevo, BiH",
-    role: "Stanar",
-    createdAt: "2024-01-15",
-  }
+export default function ProfileHeader({ profile }: ProfileHeaderProps) {
 
   const getInitials = (name: string) => {
     return name
@@ -71,25 +57,25 @@ export default function ProfileHeader() {
               fontWeight: 600,
             }}
           >
-            {getInitials(userProfile.fullName)}
+            {getInitials(profile.full_name)}
           </Avatar>
           <Box sx={{ flexGrow: 1 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
               <Typography variant="h4" color="primary" sx={{ fontWeight: 600 }}>
-                {userProfile.fullName}
+                {profile.full_name}
               </Typography>
               <Chip
-                label={userProfile.role}
-                color={getRoleColor(userProfile.role) as "primary" | "secondary" | "warning" | "error" | "default"}
+                label={profile.role.name}
+                color={getRoleColor(profile.role.name) as "primary" | "secondary" | "warning" | "error" | "default"}
                 variant="outlined"
                 size="small"
               />
             </Box>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-              {userProfile.email}
+              {profile.email}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Član od: {new Date(userProfile.createdAt).toLocaleDateString("bs-BA")}
+               clan od: {new Date(profile.created_at).toLocaleDateString("bs-BA")}
             </Typography>
           </Box>
         </Box>
@@ -108,7 +94,7 @@ export default function ProfileHeader() {
               Telefon
             </Typography>
             <Typography variant="body1" color="primary">
-              {userProfile.phone || "Nije uneseno"}
+              {profile.phone || "Nije uneseno"}
             </Typography>
           </Box>
           <Box>
@@ -116,7 +102,7 @@ export default function ProfileHeader() {
               Adresa
             </Typography>
             <Typography variant="body1" color="primary">
-              {userProfile.address || "Nije uneseno"}
+              {profile.address || "Nije uneseno"}
             </Typography>
           </Box>
         </Box>

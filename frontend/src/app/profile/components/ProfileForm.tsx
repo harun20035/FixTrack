@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type React from "react"
 
 import Box from "@mui/material/Box"
@@ -14,11 +14,18 @@ import { styled } from "@mui/material/styles"
 import SaveIcon from "@mui/icons-material/Save"
 import LockIcon from "@mui/icons-material/Lock"
 
-const FormCard = styled(Card)(({ theme }) => ({
+import type { UserProfile } from "../types";
+
+const FormCard = styled(Card)(() => ({
   background: "#1e1e1e",
   border: "1px solid #333",
   borderRadius: 16,
 }))
+
+interface ProfileFormProps {
+  profile: UserProfile;
+  refetchProfile: () => void;
+}
 
 interface ProfileFormData {
   fullName: string
@@ -40,16 +47,28 @@ interface FormErrors {
   confirmPassword?: string
 }
 
-export default function ProfileForm() {
-  const [formData, setFormData] = useState<ProfileFormData>({
-    fullName: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+387 33 123 456",
-    address: "Sarajevo, BiH",
+export default function ProfileForm({ profile, refetchProfile }: ProfileFormProps) {
+  const [formData, setFormData] = useState({
+    fullName: profile.full_name,
+    email: profile.email,
+    phone: profile.phone || "",
+    address: profile.address || "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
-  })
+  });
+
+  useEffect(() => {
+    setFormData({
+      fullName: profile.full_name,
+      email: profile.email,
+      phone: profile.phone || "",
+      address: profile.address || "",
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+  }, [profile]);
 
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoading, setIsLoading] = useState(false)
@@ -116,34 +135,57 @@ export default function ProfileForm() {
   }
 
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-
-    if (!validateForm()) {
-      return
-    }
-
-    setIsLoading(true)
-    setSuccessMessage("")
-
+    event.preventDefault();
+    if (!validateForm()) return;
+    setIsLoading(true);
+    setSuccessMessage("");
     try {
-      // Simulacija API poziva
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      setSuccessMessage("Profil je uspješno ažuriran!")
-
-      // Clear password fields after successful update
+      const token = localStorage.getItem("auth_token");
+      const payload = {
+        full_name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        current_password: formData.currentPassword,
+        new_password: formData.newPassword,
+        confirm_password: formData.confirmPassword,
+      };
+      const res = await fetch("http://localhost:8000/auth/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || "Greška prilikom ažuriranja profila.");
+      }
+      setSuccessMessage("Profil je uspješno ažuriran!");
       setFormData((prev) => ({
         ...prev,
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
-      }))
+      }));
+      refetchProfile();
     } catch (error) {
-      console.error("Error updating profile:", error)
+      setSuccessMessage("");
+      const msg = (error as Error).message;
+      if (msg.toLowerCase().includes("lozinka") || msg.toLowerCase().includes("šifra")) {
+        setErrors({ currentPassword: msg });
+      } else if (msg.toLowerCase().includes("poklapaju")) {
+        setErrors({ confirmPassword: msg });
+      } else if (msg.toLowerCase().includes("email")) {
+        setErrors({ email: msg });
+      } else {
+        setErrors({ fullName: msg });
+      }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <FormCard>

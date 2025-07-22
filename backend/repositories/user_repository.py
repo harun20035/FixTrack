@@ -10,4 +10,16 @@ def create_user(session: Session, user: User) -> User:
     session.add(user)
     session.commit()
     session.refresh(user)
+    return user
+
+def get_user_by_id(session: Session, user_id: int) -> Optional[User]:
+    statement = select(User).where(User.id == user_id)
+    return session.exec(statement).first()
+
+def update_user(session: Session, user: User, **kwargs) -> User:
+    for key, value in kwargs.items():
+        setattr(user, key, value)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
     return user 
