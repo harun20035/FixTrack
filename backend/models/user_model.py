@@ -13,4 +13,12 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     role: Optional["Role"] = Relationship(back_populates="users")
-    # Ostale relacije (npr. issues, comments...) dodajemo kasnije 
+
+    admin_notes: List["AdminNote"] = Relationship(
+        back_populates="admin",
+        sa_relationship_kwargs={"foreign_keys": "[AdminNote.admin_id]"}
+    )
+    tenant_notes: List["AdminNote"] = Relationship(
+        back_populates="tenant",
+        sa_relationship_kwargs={"foreign_keys": "[AdminNote.tenant_id]"}
+    )

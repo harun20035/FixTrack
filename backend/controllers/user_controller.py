@@ -4,7 +4,7 @@ from database import engine
 from schemas.user_schema import UserRegister, UserLogin, UserRead
 from services import user_service
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter()
 
 def get_session():
     with Session(engine) as session:
@@ -18,4 +18,4 @@ def register(user_data: UserRegister, session: Session = Depends(get_session)):
 @router.post("/login")
 def login(user_data: UserLogin, session: Session = Depends(get_session)):
     token = user_service.authenticate_user(session, user_data.email, user_data.password)
-    return {"access_token": token, "token_type": "bearer"} 
+    return {"auth_token": token, "token_type": "bearer"} 

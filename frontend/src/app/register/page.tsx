@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -9,6 +9,7 @@ import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
 import Header from "../../components/header/Header";
 import Footer from "../../components/footer/Footer";
+import CircularProgress from "@mui/material/CircularProgress";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,6 +19,24 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("auth_token")) {
+      router.replace("/dashboard");
+    } else {
+      setRedirecting(false);
+    }
+  }, [router]);
+
+  if (redirecting) {
+    return (
+      <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <CircularProgress color="primary" />
+        <Typography variant="h6" color="primary" sx={{ mt: 2 }}>Preusmjeravanje...</Typography>
+      </Box>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +44,7 @@ export default function RegisterPage() {
     setSuccess("");
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch("http://localhost:8000/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ full_name: fullName, email, password }),
@@ -34,10 +53,15 @@ export default function RegisterPage() {
         const data = await res.json();
         setError(data.detail || "Greška prilikom registracije.");
       } else {
+        const data = await res.json();
+        if (data && data.auth_token) {
+          localStorage.setItem("auth_token", data.auth_token);
+        }
         setSuccess("Registracija uspješna! Preusmjeravanje...");
         setTimeout(() => router.push("/dashboard"), 1500);
       }
     } catch (err) {
+      console.error(err);
       setError("Greška na serveru.");
     } finally {
       setLoading(false);
@@ -60,6 +84,7 @@ export default function RegisterPage() {
               required
               fullWidth
               autoFocus
+              disabled={loading || !!success}
             />
             <TextField
               label="Email"
@@ -68,6 +93,7 @@ export default function RegisterPage() {
               onChange={e => setEmail(e.target.value)}
               required
               fullWidth
+              disabled={loading || !!success}
             />
             <TextField
               label="Lozinka"
@@ -76,10 +102,11 @@ export default function RegisterPage() {
               onChange={e => setPassword(e.target.value)}
               required
               fullWidth
+              disabled={loading || !!success}
             />
             {error && <Alert severity="error">{error}</Alert>}
             {success && <Alert severity="success">{success}</Alert>}
-            <Button type="submit" variant="contained" color="primary" disabled={loading} sx={{ mt: 1 }}>
+            <Button type="submit" variant="contained" color="primary" disabled={loading || !!success} sx={{ mt: 1 }}>
               {loading ? "Registracija..." : "Registruj se"}
             </Button>
           </Box>

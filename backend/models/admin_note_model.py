@@ -9,5 +9,11 @@ class AdminNote(SQLModel, table=True):
     note: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    admin: Optional["User"] = Relationship()
-    tenant: Optional["User"] = Relationship() 
+    admin: Optional["User"] = Relationship(
+        back_populates="admin_notes",
+        sa_relationship_kwargs={"foreign_keys": "[AdminNote.admin_id]"}
+    )
+    tenant: Optional["User"] = Relationship(
+        back_populates="tenant_notes",
+        sa_relationship_kwargs={"foreign_keys": "[AdminNote.tenant_id]"}
+    )

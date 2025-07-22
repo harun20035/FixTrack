@@ -16,6 +16,8 @@ import SecurityIcon from "@mui/icons-material/Security"
 import SpeedIcon from "@mui/icons-material/Speed"
 import SupportAgentIcon from "@mui/icons-material/SupportAgent"
 import { useRouter } from "next/navigation"
+import { useEffect, useState, useRef } from "react";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const HeroSection = styled(Box)(() => ({
   background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)",
@@ -56,6 +58,25 @@ const StatsSection = styled(Paper)(({ theme }) => ({
 export default function HomePage() {
 
   const router = useRouter();
+  const [redirecting, setRedirecting] = useState(true);
+  const whyRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("auth_token")) {
+      router.replace("/dashboard");
+    } else {
+      setRedirecting(false);
+    }
+  }, [router]);
+
+  if (redirecting) {
+    return (
+      <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <CircularProgress color="primary" />
+        <Typography variant="h6" color="primary" sx={{ mt: 2 }}>Preusmjeravanje...</Typography>
+      </Box>
+    );
+  }
 
   const features = [
     {
@@ -131,6 +152,7 @@ export default function HomePage() {
                       background: "linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)",
                     },
                   }}
+                  onClick={() => router.push("/register")}
                 >
                   Počnite Odmah
                 </Button>
@@ -147,6 +169,11 @@ export default function HomePage() {
                       borderColor: "#1976d2",
                       background: "rgba(66, 165, 245, 0.1)",
                     },
+                  }}
+                  onClick={() => {
+                    if (whyRef.current) {
+                      whyRef.current.scrollIntoView({ behavior: "smooth" });
+                    }
                   }}
                 >
                   Saznajte Više
@@ -190,7 +217,7 @@ export default function HomePage() {
       </Container>
 
       {/* Features Section */}
-      <Box sx={{ py: 8, background: "#1a1a1a" }}>
+      <Box ref={whyRef} sx={{ py: 8, background: "#1a1a1a" }}>
         <Container maxWidth="lg">
           <Typography variant="h3" color="primary" textAlign="center" gutterBottom sx={{ mb: 6, fontWeight: 600 }}>
             Zašto Odabrati FixTrack?

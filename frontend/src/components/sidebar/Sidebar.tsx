@@ -15,6 +15,7 @@ import SvgIcon, { type SvgIconProps } from "@mui/material/SvgIcon"
 import PersonIcon from "@mui/icons-material/Person"
 import SettingsIcon from "@mui/icons-material/Settings"
 import LogoutIcon from "@mui/icons-material/Logout"
+import { useRouter } from "next/navigation";
 
 const drawerWidth = 280
 
@@ -56,6 +57,7 @@ export default function Sidebar({
   onMobileToggle,
   onLogout,
 }: SidebarProps) {
+  const router = useRouter();
   const drawer = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Logo */}
@@ -119,6 +121,7 @@ export default function Sidebar({
       <List sx={{ px: 2, py: 1 }}>
         <ListItem disablePadding sx={{ mb: 0.5 }}>
           <ListItemButton
+            onClick={() => router.push("/profile")}
             sx={{
               borderRadius: 2,
               "&:hover": {
@@ -149,7 +152,10 @@ export default function Sidebar({
         </ListItem>
         <ListItem disablePadding>
           <ListItemButton
-            onClick={onLogout}
+            onClick={() => {
+              localStorage.removeItem("auth_token");
+              onLogout();
+            }}
             sx={{
               borderRadius: 2,
               "&:hover": {
