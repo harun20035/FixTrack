@@ -1,10 +1,15 @@
 from sqlmodel import Session
 from models import Issue, IssueImage, IssueCategory
-from repositories.issue_repository import create_issue, add_issue_image, get_issue_categories, get_issues_for_user, update_issue_status, update_issue as repo_update_issue, delete_issue as repo_delete_issue
+from repositories.issue_repository import (
+    create_issue, add_issue_image, get_issue_categories, get_issues_for_user, update_issue_status, update_issue as repo_update_issue, delete_issue as repo_delete_issue,
+    get_user_issue_history as repo_get_user_issue_history,
+    get_user_issue_history_stats as repo_get_user_issue_history_stats
+)
 from fastapi import HTTPException, status, UploadFile
 from typing import List
 import os
 import shutil
+from sqlalchemy import select, func
 
 def create_new_issue(session: Session, tenant_id: int, data, images: List[UploadFile]) -> Issue:
     issue = Issue(
@@ -59,4 +64,36 @@ def delete_issue(session: Session, user_id: int, issue_id: int) -> None:
     issue = session.get(Issue, issue_id)
     if not issue or issue.tenant_id != user_id or issue.status != "Primljeno":
         raise HTTPException(status_code=403, detail="Nije dozvoljeno brisanje ove prijave.")
-    return repo_delete_issue(session, issue) 
+    return repo_delete_issue(session, issue)
+
+def get_user_issue_history(session: Session, user_id: int, filters: dict, page: int = 1, page_size: int = 10):
+    issues, total = repo_get_user_issue_history(session, user_id, filters, page, page_size)
+    # For each issue, count comments and get rating for that user
+    from models import Comment, Rating
+    history_issues = []
+    for issue in issues:
+        comments = session.exec(select(Comment).where(Comment.issue_id == issue.id, Comment.user_id == user_id)).all()
+        comments_count = len(comments)
+        rating_obj = session.exec(select(Rating).where(Rating.issue_id == issue.id, Rating.tenant_id == user_id)).first()
+        rating = rating_obj.score if rating_obj else None
+        
+        # Debug: print the created_at value
+        print(f"Issue {issue.id} created_at: {issue.created_at}, type: {type(issue.created_at)}")
+        
+        history_issues.append({
+            "id": issue.id,
+            "title": issue.title,
+            "description": issue.description,
+            "location": issue.location,
+            "status": issue.status,
+            "category": issue.category.name if issue.category else None,
+            "createdAt": issue.created_at.isoformat() if issue.created_at else None,
+            "completedAt": None,
+            "assignedTo": getattr(issue, 'assignedTo', None),
+            "commentsCount": comments_count,
+            "rating": rating,
+        })
+    return history_issues, total
+
+def get_user_issue_history_stats(session: Session, user_id: int):
+    return repo_get_user_issue_history_stats(session, user_id) 

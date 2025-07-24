@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, File, Form, Request,
 from sqlmodel import Session
 from database import engine
 from services import issue_service
-from schemas.issue_schema import IssueCreate, IssueRead, IssueCategoryRead, IssueStatusUpdate
+from schemas.issue_schema import IssueCreate, IssueRead, IssueCategoryRead, IssueStatusUpdate, HistoryIssue, HistoryStats, HistoryFilterParams
 import jwt
 import os
 from typing import List
@@ -88,4 +88,30 @@ def update_issue(
     session: Session = Depends(get_session),
 ):
     user_id = get_current_user_id(request)
-    return issue_service.update_issue(session, user_id, issue_id, data) 
+    return issue_service.update_issue(session, user_id, issue_id, data)
+
+@router.get("/issue-history", response_model=dict)
+def get_issue_history(
+    request: Request,
+    session: Session = Depends(get_session),
+    search: str = Query(None),
+    category: str = Query(None),
+    status: str = Query(None),
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    sort_by: str = Query("created_at_desc"),
+    page: int = Query(1),
+    page_size: int = Query(10),
+):
+    user_id = get_current_user_id(request)
+    filters = {"search": search, "category": category, "status": status, "date_from": date_from, "date_to": date_to, "sort_by": sort_by}
+    issues, total = issue_service.get_user_issue_history(session, user_id, filters, page, page_size)
+    return {"issues": issues, "total": total}
+
+@router.get("/issue-history/stats", response_model=HistoryStats, response_model_by_alias=True)
+def get_issue_history_stats(
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    user_id = get_current_user_id(request)
+    return issue_service.get_user_issue_history_stats(session, user_id) 

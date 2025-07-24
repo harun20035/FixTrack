@@ -16,6 +16,7 @@ import PersonIcon from "@mui/icons-material/Person"
 import SettingsIcon from "@mui/icons-material/Settings"
 import LogoutIcon from "@mui/icons-material/Logout"
 import { useRouter } from "next/navigation";
+import Skeleton from "@mui/material/Skeleton";
 
 const drawerWidth = 280
 
@@ -43,7 +44,7 @@ interface UserInfo {
 interface SidebarProps {
   menuItems: MenuItem[]
   currentPath: string
-  userInfo: UserInfo
+  userInfo?: UserInfo | null
   mobileOpen: boolean
   onMobileToggle: () => void
   onLogout: () => void
@@ -71,15 +72,27 @@ export default function Sidebar({
       {/* User Info */}
       <Box sx={{ p: 3, borderBottom: "1px solid #333" }}>
         <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-          <Avatar sx={{ bgcolor: "#42a5f5", mr: 2 }}>{userInfo.avatar}</Avatar>
-          <Box>
-            <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 600 }}>
-              {userInfo.name}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {userInfo.role}
-            </Typography>
-          </Box>
+          {userInfo ? (
+            <>
+              <Avatar sx={{ bgcolor: "#42a5f5", mr: 2 }}>{userInfo.avatar}</Avatar>
+              <Box>
+                <Typography variant="subtitle1" color="primary" sx={{ fontWeight: 600 }}>
+                  {userInfo.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {userInfo.role}
+                </Typography>
+              </Box>
+            </>
+          ) : (
+            <>
+              <Skeleton variant="circular" width={40} height={40} sx={{ mr: 2 }} />
+              <Box>
+                <Skeleton variant="text" width={100} height={24} />
+                <Skeleton variant="text" width={60} height={18} />
+              </Box>
+            </>
+          )}
         </Box>
       </Box>
 
@@ -93,6 +106,8 @@ export default function Sidebar({
                   ? () => router.push("/new-issue")
                   : item.text.trim().toLowerCase() === "moje prijave"
                   ? () => router.push("/my-issues")
+                  : item.text.trim().toLowerCase() === "historija"
+                  ? () => router.push("/issue-history")
                   : undefined
               }
               sx={{

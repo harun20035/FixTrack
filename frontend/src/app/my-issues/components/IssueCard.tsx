@@ -82,7 +82,6 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
         .catch(() => setCategoriesError("Greška prilikom dohvata kategorija."))
         .finally(() => setCategoriesLoading(false));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editDialogOpen]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {

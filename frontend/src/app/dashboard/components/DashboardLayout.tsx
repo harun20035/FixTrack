@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type React from "react"
 import Box from "@mui/material/Box"
 import AppBar from "@mui/material/AppBar"
@@ -40,11 +40,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { text: "Notifikacije", icon: <NotificationsIcon />, path: "/dashboard/notifications" },
   ]
 
-  const userInfo: UserInfo = {
-    name: "John Doe",
-    role: "Stanar - Stan 15",
-    avatar: "JD",
-  }
+  // Fetch user profile
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    if (!token) return;
+    fetch("http://localhost:8000/auth/profile", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => res.json())
+      .then(data => {
+        setUserInfo({
+          name: data.full_name,
+          role: data.role?.name || "Korisnik",
+          avatar: data.full_name ? data.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase() : "U",
+        });
+      })
+      .catch(() => setUserInfo(null));
+  }, []);
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "#121212" }}>

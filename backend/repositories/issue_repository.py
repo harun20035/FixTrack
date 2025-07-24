@@ -1,6 +1,7 @@
-from sqlmodel import Session, select, delete
+from sqlmodel import Session, select, delete, func
 from models import Issue, IssueImage, IssueCategory, Comment, Rating, Assignment, Survey, AssignmentImage, AssignmentDocument
 from typing import List, Optional, Dict
+from schemas.issue_schema import HistoryStats
 
 def create_issue(session: Session, issue: Issue) -> Issue:
     session.add(issue)
@@ -67,4 +68,59 @@ def delete_issue(session: Session, issue: Issue) -> None:
         session.exec(delete(AssignmentDocument).where(AssignmentDocument.assignment_id == assignment.id))
         session.delete(assignment)
     session.delete(issue)
-    session.commit() 
+    session.commit()
+
+def get_user_issue_history(
+    session: Session,
+    user_id: int,
+    filters: dict,
+    page: int = 1,
+    page_size: int = 10
+):
+    statement = select(Issue).where(Issue.tenant_id == user_id)
+    if filters.get("search"):
+        search = f"%{filters['search']}%"
+        statement = statement.where(
+            (Issue.title.ilike(search)) |
+            (Issue.description.ilike(search)) |
+            (Issue.location.ilike(search))
+        )
+    if filters.get("category"):
+        statement = statement.join(Issue.category).where(IssueCategory.name == filters["category"])
+    if filters.get("status"):
+        statement = statement.where(Issue.status == filters["status"])
+    if filters.get("date_from"):
+        statement = statement.where(Issue.created_at >= filters["date_from"])
+    if filters.get("date_to"):
+        statement = statement.where(Issue.created_at <= filters["date_to"])
+    # Sorting
+    sort_by = filters.get("sort_by", "created_at_desc")
+    if sort_by == "created_at_asc":
+        statement = statement.order_by(Issue.created_at.asc())
+    elif sort_by == "created_at_desc":
+        statement = statement.order_by(Issue.created_at.desc())
+    # Get all issues for total count
+    all_issues = session.exec(statement).all()
+    total = len(all_issues)
+    # Pagination
+    issues = all_issues[(page-1)*page_size:page*page_size]
+    return issues, total
+
+def get_user_issue_history_stats(session: Session, user_id: int):
+    all_issues = session.exec(select(Issue).where(Issue.tenant_id == user_id)).all()
+    total_issues = len(all_issues)
+    completed_issues = len([i for i in all_issues if i.status == "Završeno"])
+    rejected_issues = len([i for i in all_issues if i.status == "Odbijeno"])
+    in_progress_issues = len([i for i in all_issues if i.status == "U toku"])
+    from models import Rating
+    ratings = session.exec(select(Rating.score).join(Issue).where(Issue.tenant_id == user_id)).all()
+    avg_rating = sum(ratings) / len(ratings) if ratings else None
+    avg_resolution_time = None
+    return HistoryStats(
+        total_issues=total_issues,
+        completed_issues=completed_issues,
+        rejected_issues=rejected_issues,
+        in_progress_issues=in_progress_issues,
+        average_rating=avg_rating,
+        average_resolution_time=avg_resolution_time,
+    ) 
