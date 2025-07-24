@@ -5,6 +5,7 @@ from repositories.user_repository import get_user_by_email, create_user, get_use
 from fastapi import HTTPException, status
 import jwt
 import os
+from datetime import datetime, timedelta
 
 SECRET_KEY = os.getenv("SECRET_KEY", "secret")
 ALGORITHM = "HS256"
@@ -21,7 +22,12 @@ def authenticate_user(session: Session, email: str, password: str) -> str:
     user = get_user_by_email(session, email)
     if not user or not pwd_context.verify(password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Pogrešan email ili lozinka.")
-    token_data = {"sub": str(user.id), "email": user.email, "role_id": user.role_id}
+    token_data = {
+        "sub": str(user.id),
+        "email": user.email,
+        "role_id": user.role_id,
+        "exp": datetime.utcnow() + timedelta(hours=1)
+    }
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
     return token
 
