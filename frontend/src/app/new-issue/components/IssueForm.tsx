@@ -8,7 +8,6 @@ import CardContent from "@mui/material/CardContent"
 import Typography from "@mui/material/Typography"
 import TextField from "@mui/material/TextField"
 import Button from "@mui/material/Button"
-import Alert from "@mui/material/Alert"
 import FormControl from "@mui/material/FormControl"
 import InputLabel from "@mui/material/InputLabel"
 import Select from "@mui/material/Select"
@@ -22,7 +21,6 @@ import type { IssueFormData, FormErrors, IssueCategory } from "../types"
 import type { SelectChangeEvent } from "@mui/material/Select";
 import Snackbar from "@mui/material/Snackbar";
 import MuiAlert from "@mui/material/Alert";
-import { useRouter } from "next/navigation";
 
 const FormCard = styled(Card)(() => ({
   background: "#1e1e1e",
@@ -43,7 +41,6 @@ export default function IssueForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [categories, setCategories] = useState<IssueCategory[]>([]);
   const [openSnackbar, setOpenSnackbar] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     const fetchCategories = async () => {
