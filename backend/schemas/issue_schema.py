@@ -27,9 +27,16 @@ class IssueRead(BaseModel):
     location: Optional[str] = None
     status: str
     created_at: datetime
-    updated_at: Optional[datetime] = None
     images: List[IssueImageRead] = []
     category: Optional[IssueCategoryRead] = None
 
     class Config:
         from_attributes = True 
+
+class IssueStatusUpdate(BaseModel):
+    status: str
+
+class IssueFilterParams(BaseModel):
+    status: Optional[str] = None
+    category: Optional[str] = None
+    search: Optional[str] = None 

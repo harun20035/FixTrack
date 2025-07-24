@@ -88,7 +88,13 @@ export default function Sidebar({
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
-              onClick={item.text === "Nova Prijava" ? () => router.push("/new-issue") : undefined}
+              onClick={
+                item.text.trim().toLowerCase() === "nova prijava"
+                  ? () => router.push("/new-issue")
+                  : item.text.trim().toLowerCase() === "moje prijave"
+                  ? () => router.push("/my-issues")
+                  : undefined
+              }
               sx={{
                 borderRadius: 2,
                 "&:hover": {

@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
+from fastapi.staticfiles import StaticFiles
 from database import engine
 from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlmodel import Field, Session, SQLModel, create_engine, select
@@ -36,6 +37,7 @@ def start_application():
 
 app = start_application()
 
+app.mount("/media", StaticFiles(directory="media"), name="media")
 
 app.include_router(user_controller.router, prefix="/auth", tags=["auth"])
 app.include_router(issue_controller.router, prefix="/api", tags=["issues"])

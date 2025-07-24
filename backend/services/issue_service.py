@@ -1,6 +1,6 @@
 from sqlmodel import Session
-from models import Issue, IssueImage
-from repositories.issue_repository import create_issue, add_issue_image, get_issue_categories
+from models import Issue, IssueImage, IssueCategory
+from repositories.issue_repository import create_issue, add_issue_image, get_issue_categories, get_issues_for_user, update_issue_status, update_issue as repo_update_issue, delete_issue as repo_delete_issue
 from fastapi import HTTPException, status, UploadFile
 from typing import List
 import os
@@ -32,4 +32,31 @@ def save_issue_image(upload_file: UploadFile, issue_id: int) -> str:
     return file_path
 
 def get_categories(session: Session):
-    return get_issue_categories(session) 
+    return get_issue_categories(session)
+
+def get_user_issues(session: Session, user_id: int, filters) -> list[Issue]:
+    return get_issues_for_user(session, user_id, filters)
+
+def change_issue_status(session: Session, user_id: int, issue_id: int, new_status: str) -> Issue:
+    issue = session.get(Issue, issue_id)
+    if not issue or issue.tenant_id != user_id:
+        raise HTTPException(status_code=404, detail="Prijava nije pronađena ili nemate dozvolu.")
+    return update_issue_status(session, issue_id, new_status)
+
+def update_issue(session: Session, user_id: int, issue_id: int, data) -> Issue:
+    issue = session.get(Issue, issue_id)
+    if not issue or issue.tenant_id != user_id or issue.status != "Primljeno":
+        raise HTTPException(status_code=403, detail="Nije dozvoljeno uređivanje ove prijave.")
+    update_fields = {
+        "title": data.title,
+        "description": data.description,
+        "location": data.location,
+        "category_id": data.category_id,
+    }
+    return repo_update_issue(session, issue, **update_fields)
+
+def delete_issue(session: Session, user_id: int, issue_id: int) -> None:
+    issue = session.get(Issue, issue_id)
+    if not issue or issue.tenant_id != user_id or issue.status != "Primljeno":
+        raise HTTPException(status_code=403, detail="Nije dozvoljeno brisanje ove prijave.")
+    return repo_delete_issue(session, issue) 

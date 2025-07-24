@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, status, UploadFile, File, Form, Request, HTTPException
+from fastapi import APIRouter, Depends, status, UploadFile, File, Form, Request, HTTPException, Query, Body
 from sqlmodel import Session
 from database import engine
 from services import issue_service
-from schemas.issue_schema import IssueCreate, IssueRead, IssueCategoryRead
+from schemas.issue_schema import IssueCreate, IssueRead, IssueCategoryRead, IssueStatusUpdate
 import jwt
 import os
 from typing import List
@@ -44,4 +44,48 @@ def create_issue(
 
 @router.get("/issue-categories", response_model=List[IssueCategoryRead])
 def get_categories(session: Session = Depends(get_session)):
-    return issue_service.get_categories(session) 
+    return issue_service.get_categories(session)
+
+@router.get("/my-issues", response_model=List[IssueRead])
+def get_my_issues(
+    request: Request,
+    session: Session = Depends(get_session),
+    status: str = Query(None),
+    category: str = Query(None),
+    search: str = Query(None),
+):
+    user_id = get_current_user_id(request)
+    filters = {"status": status, "category": category, "search": search}
+    issues = issue_service.get_user_issues(session, user_id, filters)
+    return issues
+
+@router.patch("/issues/{issue_id}/status", response_model=IssueRead)
+def update_issue_status(
+    issue_id: int,
+    data: IssueStatusUpdate,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    user_id = get_current_user_id(request)
+    issue = issue_service.change_issue_status(session, user_id, issue_id, data.status)
+    return issue
+
+@router.delete("/issues/{issue_id}", response_model=None, status_code=204)
+def delete_issue(
+    issue_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    user_id = get_current_user_id(request)
+    issue_service.delete_issue(session, user_id, issue_id)
+    return
+
+@router.put("/issues/{issue_id}", response_model=IssueRead)
+def update_issue(
+    issue_id: int,
+    data: IssueCreate = Body(...),
+    request: Request = None,
+    session: Session = Depends(get_session),
+):
+    user_id = get_current_user_id(request)
+    return issue_service.update_issue(session, user_id, issue_id, data) 

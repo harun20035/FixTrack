@@ -38,6 +38,18 @@ export default function RegisterPage() {
     );
   }
 
+  function saveTokenWithExp(token: string) {
+    localStorage.setItem("auth_token", token);
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      if (payload.exp) {
+        localStorage.setItem("auth_token_exp", payload.exp.toString());
+      }
+    } catch (e) {
+      localStorage.removeItem("auth_token_exp");
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -55,7 +67,7 @@ export default function RegisterPage() {
       } else {
         const data = await res.json();
         if (data && data.auth_token) {
-          localStorage.setItem("auth_token", data.auth_token);
+          saveTokenWithExp(data.auth_token);
         }
         setSuccess("Registracija uspješna! Preusmjeravanje...");
         setTimeout(() => router.push("/dashboard"), 1500);

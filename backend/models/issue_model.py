@@ -11,7 +11,6 @@ class Issue(SQLModel, table=True):
     location: Optional[str] = None
     status: str = Field(default="Primljeno", max_length=50)
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: Optional[datetime] = None
 
     tenant: Optional["User"] = Relationship()
     category: Optional["IssueCategory"] = Relationship(back_populates="issues")
