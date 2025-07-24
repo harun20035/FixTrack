@@ -28,6 +28,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import Image from "next/image";
 
 const IssueCardStyled = styled(Card)(() => ({
   background: "#2a2a2a",
@@ -318,15 +319,18 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
             </IconButton>
           )}
           <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 400, background: "#181818" }}>
-            <img
+            <Image
               src={(() => {
                 const img = issue.images[galleryIndex];
                 let url = typeof img === "object" && img !== null ? (img as { image_url?: string }).image_url : img;
                 if (typeof url === "string" && url && !url.startsWith("http")) url = baseUrl + url.replace(/^\/+/, "");
                 return typeof url === "string" ? url : undefined;
-              })()}
+              })() || ""}
               alt={`Slika ${galleryIndex + 1}`}
-              style={{ maxWidth: "100%", maxHeight: 500, borderRadius: 8 }}
+              width={800}
+              height={500}
+              style={{ maxWidth: "100%", maxHeight: 500, borderRadius: 8, objectFit: "contain" }}
+              unoptimized
             />
           </Box>
           <Box sx={{ textAlign: "center", color: "#fff", pb: 2 }}>
