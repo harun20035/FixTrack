@@ -22,12 +22,12 @@ def authenticate_user(session: Session, email: str, password: str) -> str:
     user = get_user_by_email(session, email)
     if not user or not pwd_context.verify(password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Pogrešan email ili lozinka.")
-    exp = int((datetime.utcnow() + timedelta(hours=1)).timestamp())
+    # exp = int((datetime.utcnow() + timedelta(hours=1)).timestamp())
     token_data = {
         "sub": str(user.id),
         "email": user.email,
         "role_id": user.role_id,
-        "exp": exp
+        # "exp": exp
     }
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
     return token

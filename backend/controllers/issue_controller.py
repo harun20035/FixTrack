@@ -6,6 +6,8 @@ from schemas.issue_schema import IssueCreate, IssueRead, IssueCategoryRead, Issu
 import jwt
 import os
 from typing import List
+from services import comment_service
+from schemas.comment_schema import CommentCreate, CommentRead
 
 router = APIRouter()
 
@@ -114,4 +116,13 @@ def get_issue_history_stats(
     session: Session = Depends(get_session),
 ):
     user_id = get_current_user_id(request)
-    return issue_service.get_user_issue_history_stats(session, user_id) 
+    return issue_service.get_user_issue_history_stats(session, user_id)
+
+@router.get("/issues/{issue_id}/comments", response_model=List[CommentRead])
+def get_issue_comments(issue_id: int, session: Session = Depends(get_session)):
+    return comment_service.get_issue_comments(session, issue_id)
+
+@router.post("/issues/{issue_id}/comments", response_model=CommentRead, status_code=status.HTTP_201_CREATED)
+def add_issue_comment(issue_id: int, data: CommentCreate, request: Request, session: Session = Depends(get_session)):
+    user_id = get_current_user_id(request)
+    return comment_service.create_new_comment(session, user_id, issue_id, data) 

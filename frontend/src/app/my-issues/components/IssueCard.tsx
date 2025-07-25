@@ -30,6 +30,7 @@ import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import Image from "next/image";
 import { authFetch } from "../../../utils/authFetch";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 
 const IssueCardStyled = styled(Card)(() => ({
   background: "#2a2a2a",
@@ -66,6 +67,14 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
   const [categories, setCategories] = useState<string[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [categoriesError, setCategoriesError] = useState("");
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [comments, setComments] = useState<{ id: number; user_name?: string; content: string; created_at: string }[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsError, setCommentsError] = useState("");
+  const [addCommentOpen, setAddCommentOpen] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [addCommentLoading, setAddCommentLoading] = useState(false);
+  const [addCommentError, setAddCommentError] = useState("");
 
   // Fetch categories when edit dialog opens
   useEffect(() => {
@@ -85,6 +94,22 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
         .finally(() => setCategoriesLoading(false));
     }
   }, [editDialogOpen]);
+
+  // Fetch comments
+  const fetchComments = async () => {
+    setCommentsLoading(true);
+    setCommentsError("");
+    try {
+      const res = await authFetch(`http://localhost:8000/api/issues/${issue.id}/comments`);
+      if (!res.ok) throw new Error("Greška prilikom dohvata komentara.");
+      const data = await res.json();
+      setComments(data);
+    } catch (e) {
+      setCommentsError((e as Error).message);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget)
@@ -106,6 +131,42 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
   const handleCloseGallery = () => setGalleryOpen(false);
   const handlePrevImage = () => setGalleryIndex((prev) => (prev === 0 ? (issue.images.length - 1) : prev - 1));
   const handleNextImage = () => setGalleryIndex((prev) => (prev === issue.images.length - 1 ? 0 : prev + 1));
+
+  const handleOpenComments = () => {
+    setCommentsOpen(true);
+    fetchComments();
+  };
+  const handleCloseComments = () => setCommentsOpen(false);
+
+  // Add comment modal
+  const handleOpenAddComment = () => {
+    setAddCommentOpen(true);
+    setNewComment("");
+    setAddCommentError("");
+  };
+  const handleCloseAddComment = () => setAddCommentOpen(false);
+
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+    setAddCommentLoading(true);
+    setAddCommentError("");
+    try {
+      const res = await authFetch(`http://localhost:8000/api/issues/${issue.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: newComment }),
+      });
+      if (!res.ok) throw new Error("Greška prilikom dodavanja komentara.");
+      setNewComment("");
+      setAddCommentOpen(false);
+      fetchComments();
+      setCommentsOpen(true);
+    } catch (e) {
+      setAddCommentError((e as Error).message);
+    } finally {
+      setAddCommentLoading(false);
+    }
+  };
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -285,22 +346,26 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
               >
                 Izbriši
               </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ChatBubbleOutlineIcon />}
+                onClick={handleOpenComments}
+                sx={{ color: "#4caf50", borderColor: "#4caf50" }}
+              >
+                Komentari
+              </Button>
             </Box>
           )}
         </Box>
 
         {/* Status Change Menu */}
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-          <MenuItem disabled>
+          <MenuItem onClick={() => { handleOpenAddComment(); handleMenuClose(); }}>
             <Typography variant="subtitle2" color="text.secondary">
-              Promijeni status:
+              Dodaj komentar
             </Typography>
           </MenuItem>
-          {availableStatuses.map((status) => (
-            <MenuItem key={status} onClick={() => handleStatusChange(status)}>
-              {status}
-            </MenuItem>
-          ))}
         </Menu>
       </CardContent>
       {/* Image Gallery Modal */}
@@ -393,6 +458,57 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
           <Button onClick={() => setEditDialogOpen(false)}>Otkaži</Button>
           <Button onClick={handleEditSave} variant="contained" disabled={editLoading}>
             Sačuvaj
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Komentari Modal */}
+      <Dialog open={commentsOpen} onClose={handleCloseComments} maxWidth="sm" fullWidth>
+        <DialogTitle>Komentari</DialogTitle>
+        <DialogContent dividers sx={{ minHeight: 200 }}>
+          {commentsLoading ? (
+            <Typography color="primary">Učitavanje komentara...</Typography>
+          ) : commentsError ? (
+            <Typography color="error">{commentsError}</Typography>
+          ) : comments.length === 0 ? (
+            <Typography color="text.secondary">Nema komentara za ovu prijavu.</Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {comments.map((c) => (
+                <Box key={c.id} sx={{ p: 2, background: "#232323", borderRadius: 2 }}>
+                  <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>{c.user_name || "Korisnik"}</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>{new Date(c.created_at).toLocaleString("bs-BA")}</Typography>
+                  <Typography variant="body2" color="text.secondary">{c.content}</Typography>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseComments}>Zatvori</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dodaj komentar Modal */}
+      <Dialog open={addCommentOpen} onClose={handleCloseAddComment} maxWidth="xs" fullWidth>
+        <DialogTitle>Dodaj komentar</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Komentar"
+            value={newComment}
+            onChange={e => setNewComment(e.target.value)}
+            fullWidth
+            multiline
+            minRows={3}
+            autoFocus
+            sx={{ mt: 1 }}
+          />
+          {addCommentError && <Typography color="error" sx={{ mt: 1 }}>{addCommentError}</Typography>}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddComment}>Otkaži</Button>
+          <Button onClick={handleAddComment} variant="contained" disabled={addCommentLoading || !newComment.trim()}>
+            Dodaj
           </Button>
         </DialogActions>
       </Dialog>
