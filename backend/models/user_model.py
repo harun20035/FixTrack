@@ -22,3 +22,4 @@ class User(SQLModel, table=True):
         back_populates="tenant",
         sa_relationship_kwargs={"foreign_keys": "[AdminNote.tenant_id]"}
     )
+    notifications: List["Notification"] = Relationship(back_populates="user")

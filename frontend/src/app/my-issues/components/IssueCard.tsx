@@ -29,6 +29,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import Image from "next/image";
+import { authFetch } from "../../../utils/authFetch";
 
 const IssueCardStyled = styled(Card)(() => ({
   background: "#2a2a2a",
@@ -147,7 +148,7 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
     setDeleteDialogOpen(false);
     try {
       const token = localStorage.getItem("auth_token");
-      const res = await fetch(`http://localhost:8000/api/issues/${issue.id}`, {
+      const res = await authFetch(`http://localhost:8000/api/issues/${issue.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -166,7 +167,7 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
     setEditError("");
     try {
       const token = localStorage.getItem("auth_token");
-      const res = await fetch(`http://localhost:8000/api/issues/${issue.id}`, {
+      const res = await authFetch(`http://localhost:8000/api/issues/${issue.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

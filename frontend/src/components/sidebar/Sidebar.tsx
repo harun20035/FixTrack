@@ -17,6 +17,11 @@ import SettingsIcon from "@mui/icons-material/Settings"
 import LogoutIcon from "@mui/icons-material/Logout"
 import { useRouter } from "next/navigation";
 import Skeleton from "@mui/material/Skeleton";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import Badge from "@mui/material/Badge";
+import { useEffect, useState } from "react";
+import { authFetch } from "../../utils/authFetch";
+import BuildIcon from "@mui/icons-material/Build";
 
 const drawerWidth = 280
 
@@ -59,6 +64,24 @@ export default function Sidebar({
   onLogout,
 }: SidebarProps) {
   const router = useRouter();
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    const fetchUnread = async () => {
+      try {
+        const res = await authFetch("http://localhost:8000/api/notifications");
+        if (!res.ok) return;
+        const data = await res.json();
+        const count = Array.isArray(data) ? data.filter((n: any) => !n.is_read).length : 0;
+        setUnreadCount(count);
+      } catch {}
+    };
+    fetchUnread();
+    interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   const drawer = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Logo */}
@@ -102,7 +125,9 @@ export default function Sidebar({
           <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
               onClick={
-                item.text.trim().toLowerCase() === "nova prijava"
+                item.text.trim().toLowerCase() === "notifikacije"
+                  ? () => router.push("/notifications")
+                  : item.text.trim().toLowerCase() === "nova prijava"
                   ? () => router.push("/new-issue")
                   : item.text.trim().toLowerCase() === "moje prijave"
                   ? () => router.push("/my-issues")
@@ -124,7 +149,15 @@ export default function Sidebar({
               }}
               selected={item.path === currentPath}
             >
-              <ListItemIcon sx={{ color: "#42a5f5", minWidth: 40 }}>{item.icon}</ListItemIcon>
+              <ListItemIcon sx={{ color: "#42a5f5", minWidth: 40 }}>
+                {item.text.trim().toLowerCase() === "notifikacije" ? (
+                  <Badge badgeContent={unreadCount} color="error" invisible={unreadCount === 0} overlap="circular">
+                    <NotificationsIcon />
+                  </Badge>
+                ) : (
+                  item.icon
+                )}
+              </ListItemIcon>
               <ListItemText
                 primary={item.text}
                 primaryTypographyProps={{
@@ -136,6 +169,49 @@ export default function Sidebar({
           </ListItem>
         ))}
       </List>
+
+      {/* Izvođač dugme */}
+      {userInfo && (
+        (userInfo.role === "Stanar") ? (
+          <List sx={{ px: 2, py: 0 }}>
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                onClick={() => router.push("/contractorform")}
+                sx={{
+                  borderRadius: 2,
+                  "&:hover": {
+                    backgroundColor: "rgba(66, 165, 245, 0.1)",
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ color: "#42a5f5", minWidth: 40 }}>
+                  <BuildIcon />
+                </ListItemIcon>
+                <ListItemText primary="Postani izvođač" primaryTypographyProps={{ fontSize: "0.9rem" }} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        ) : (userInfo.role.includes("Izvođač")) ? (
+          <List sx={{ px: 2, py: 0 }}>
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                onClick={() => router.push("/contractordashboard")}
+                sx={{
+                  borderRadius: 2,
+                  "&:hover": {
+                    backgroundColor: "rgba(66, 165, 245, 0.1)",
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ color: "#42a5f5", minWidth: 40 }}>
+                  <BuildIcon />
+                </ListItemIcon>
+                <ListItemText primary="Izvođač dashboard" primaryTypographyProps={{ fontSize: "0.9rem" }} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        ) : null
+      )}
 
       <Divider sx={{ borderColor: "#333" }} />
 

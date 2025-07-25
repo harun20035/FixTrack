@@ -5,7 +5,7 @@ from database import engine
 from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 from starlette.middleware.cors import CORSMiddleware
-from controllers import user_controller, issue_controller
+from controllers import user_controller, issue_controller, notification_controller
 
 
 def create_db_and_tables():
@@ -41,3 +41,4 @@ app.mount("/media", StaticFiles(directory="media"), name="media")
 
 app.include_router(user_controller.router, prefix="/auth", tags=["auth"])
 app.include_router(issue_controller.router, prefix="/api", tags=["issues"])
+app.include_router(notification_controller.router, prefix="/api", tags=["notifications"])

@@ -10,6 +10,8 @@ from typing import List
 import os
 import shutil
 from sqlalchemy import select, func
+from services import notification_service
+from schemas.notification_schema import NotificationCreate
 
 def create_new_issue(session: Session, tenant_id: int, data, images: List[UploadFile]) -> Issue:
     issue = Issue(
@@ -46,7 +48,17 @@ def change_issue_status(session: Session, user_id: int, issue_id: int, new_statu
     issue = session.get(Issue, issue_id)
     if not issue or issue.tenant_id != user_id:
         raise HTTPException(status_code=404, detail="Prijava nije pronađena ili nemate dozvolu.")
-    return update_issue_status(session, issue_id, new_status)
+    old_status = issue.status
+    updated_issue = update_issue_status(session, issue_id, new_status)
+    # Kreiraj notifikaciju za korisnika (stanara)
+    notification_service.create_new_notification(session, NotificationCreate(
+        user_id=issue.tenant_id,
+        issue_id=issue.id,
+        old_status=old_status,
+        new_status=new_status,
+        changed_by="Sistem"  # ili ime korisnika koji je promijenio status
+    ))
+    return updated_issue
 
 def update_issue(session: Session, user_id: int, issue_id: int, data) -> Issue:
     issue = session.get(Issue, issue_id)
