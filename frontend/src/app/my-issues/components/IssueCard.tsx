@@ -31,6 +31,8 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import Image from "next/image";
 import { authFetch } from "../../../utils/authFetch";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
+import Rating from "@mui/material/Rating";
 
 const IssueCardStyled = styled(Card)(() => ({
   background: "#2a2a2a",
@@ -75,6 +77,15 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
   const [newComment, setNewComment] = useState("");
   const [addCommentLoading, setAddCommentLoading] = useState(false);
   const [addCommentError, setAddCommentError] = useState("");
+  const [ratingOpen, setRatingOpen] = useState(false);
+  const [addRatingOpen, setAddRatingOpen] = useState(false);
+  const [rating, setRating] = useState<{ id: number; score: number; comment?: string } | null>(null);
+  const [ratingLoading, setRatingLoading] = useState(false);
+  const [ratingError, setRatingError] = useState("");
+  const [newRating, setNewRating] = useState<number | null>(null);
+  const [newRatingComment, setNewRatingComment] = useState("");
+  const [addRatingLoading, setAddRatingLoading] = useState(false);
+  const [addRatingError, setAddRatingError] = useState("");
 
   // Fetch categories when edit dialog opens
   useEffect(() => {
@@ -108,6 +119,22 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
       setCommentsError((e as Error).message);
     } finally {
       setCommentsLoading(false);
+    }
+  };
+
+  // Fetch rating
+  const fetchRating = async () => {
+    setRatingLoading(true);
+    setRatingError("");
+    try {
+      const res = await authFetch(`http://localhost:8000/api/issues/${issue.id}/rating`);
+      if (!res.ok) throw new Error("Greška prilikom dohvata ocjene.");
+      const data = await res.json();
+      setRating(data);
+    } catch (e) {
+      setRatingError((e as Error).message);
+    } finally {
+      setRatingLoading(false);
     }
   };
 
@@ -165,6 +192,41 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
       setAddCommentError((e as Error).message);
     } finally {
       setAddCommentLoading(false);
+    }
+  };
+
+  const handleOpenRating = () => {
+    setRatingOpen(true);
+    fetchRating();
+  };
+  const handleCloseRating = () => setRatingOpen(false);
+
+  const handleOpenAddRating = () => {
+    setAddRatingOpen(true);
+    setNewRating(null);
+    setNewRatingComment("");
+    setAddRatingError("");
+  };
+  const handleCloseAddRating = () => setAddRatingOpen(false);
+
+  const handleAddRating = async () => {
+    if (!newRating) return;
+    setAddRatingLoading(true);
+    setAddRatingError("");
+    try {
+      const res = await authFetch(`http://localhost:8000/api/issues/${issue.id}/rating`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ score: newRating, comment: newRatingComment }),
+      });
+      if (!res.ok) throw new Error("Greška prilikom slanja ocjene.");
+      setAddRatingOpen(false);
+      fetchRating();
+      setRatingOpen(true);
+    } catch (e) {
+      setAddRatingError((e as Error).message);
+    } finally {
+      setAddRatingLoading(false);
     }
   };
 
@@ -357,15 +419,35 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
               </Button>
             </Box>
           )}
+          {issue.status === "Završeno" && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<StarBorderIcon />}
+              onClick={handleOpenRating}
+              sx={{ color: "#ffb300", borderColor: "#ffb300" }}
+            >
+              Ocjena
+            </Button>
+          )}
         </Box>
 
         {/* Status Change Menu */}
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-          <MenuItem onClick={() => { handleOpenAddComment(); handleMenuClose(); }}>
-            <Typography variant="subtitle2" color="text.secondary">
-              Dodaj komentar
-            </Typography>
-          </MenuItem>
+          {issue.status === "Primljeno" && (
+            <MenuItem onClick={() => { handleOpenAddComment(); handleMenuClose(); }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Dodaj komentar
+              </Typography>
+            </MenuItem>
+          )}
+          {issue.status === "Završeno" && (
+            <MenuItem onClick={() => { handleOpenAddRating(); handleMenuClose(); }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Ocijeni uslugu
+              </Typography>
+            </MenuItem>
+          )}
         </Menu>
       </CardContent>
       {/* Image Gallery Modal */}
@@ -509,6 +591,58 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
           <Button onClick={handleCloseAddComment}>Otkaži</Button>
           <Button onClick={handleAddComment} variant="contained" disabled={addCommentLoading || !newComment.trim()}>
             Dodaj
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Ocjena Modal (prikaz) */}
+      <Dialog open={ratingOpen} onClose={handleCloseRating} maxWidth="xs" fullWidth>
+        <DialogTitle>Vaša ocjena usluge</DialogTitle>
+        <DialogContent dividers sx={{ minHeight: 120 }}>
+          {ratingLoading ? (
+            <Typography color="primary">Učitavanje ocjene...</Typography>
+          ) : ratingError ? (
+            <Typography color="error">{ratingError}</Typography>
+          ) : !rating ? (
+            <Typography color="text.secondary">Niste još ocijenili ovu uslugu.</Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+              <Rating value={rating.score} readOnly max={5} sx={{ fontSize: 40 }} />
+              {rating.comment && <Typography variant="body2" color="text.secondary">{rating.comment}</Typography>}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseRating}>Zatvori</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dodaj ocjenu Modal */}
+      <Dialog open={addRatingOpen} onClose={handleCloseAddRating} maxWidth="xs" fullWidth>
+        <DialogTitle>Ocijeni uslugu</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, mt: 1 }}>
+            <Rating
+              value={newRating}
+              onChange={(_, value) => setNewRating(value)}
+              max={5}
+              sx={{ fontSize: 40 }}
+            />
+            <TextField
+              label="Komentar (opcionalno)"
+              value={newRatingComment}
+              onChange={e => setNewRatingComment(e.target.value)}
+              fullWidth
+              multiline
+              minRows={2}
+            />
+            {addRatingError && <Typography color="error">{addRatingError}</Typography>}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddRating}>Otkaži</Button>
+          <Button onClick={handleAddRating} variant="contained" disabled={addRatingLoading || !newRating}>
+            Sačuvaj
           </Button>
         </DialogActions>
       </Dialog>

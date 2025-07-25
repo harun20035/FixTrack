@@ -8,6 +8,8 @@ import os
 from typing import List
 from services import comment_service
 from schemas.comment_schema import CommentCreate, CommentRead
+from services import rating_service
+from schemas.rating_schema import RatingCreate, RatingRead
 
 router = APIRouter()
 
@@ -125,4 +127,14 @@ def get_issue_comments(issue_id: int, session: Session = Depends(get_session)):
 @router.post("/issues/{issue_id}/comments", response_model=CommentRead, status_code=status.HTTP_201_CREATED)
 def add_issue_comment(issue_id: int, data: CommentCreate, request: Request, session: Session = Depends(get_session)):
     user_id = get_current_user_id(request)
-    return comment_service.create_new_comment(session, user_id, issue_id, data) 
+    return comment_service.create_new_comment(session, user_id, issue_id, data)
+
+@router.get("/issues/{issue_id}/rating", response_model=RatingRead | None)
+def get_issue_rating(issue_id: int, request: Request, session: Session = Depends(get_session)):
+    user_id = get_current_user_id(request)
+    return rating_service.get_rating_for_issue_and_user(session, issue_id, user_id)
+
+@router.post("/issues/{issue_id}/rating", response_model=RatingRead)
+def add_or_update_issue_rating(issue_id: int, data: RatingCreate, request: Request, session: Session = Depends(get_session)):
+    user_id = get_current_user_id(request)
+    return rating_service.create_or_update_rating(session, issue_id, user_id, data) 
