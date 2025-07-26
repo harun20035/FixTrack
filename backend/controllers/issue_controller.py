@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, File, Form, Request,
 from sqlmodel import Session
 from database import engine
 from services import issue_service
-from schemas.issue_schema import IssueCreate, IssueRead, IssueCategoryRead, IssueStatusUpdate, HistoryIssue, HistoryStats, HistoryFilterParams
+from schemas.issue_schema import IssueCreate, IssueRead, IssueCategoryRead, IssueStatusUpdate, HistoryIssue, HistoryStats, HistoryFilterParams, IssueForManager
 import jwt
 import os
 from typing import List
@@ -137,4 +137,50 @@ def get_issue_rating(issue_id: int, request: Request, session: Session = Depends
 @router.post("/issues/{issue_id}/rating", response_model=RatingRead)
 def add_or_update_issue_rating(issue_id: int, data: RatingCreate, request: Request, session: Session = Depends(get_session)):
     user_id = get_current_user_id(request)
-    return rating_service.create_or_update_rating(session, issue_id, user_id, data) 
+    return rating_service.create_or_update_rating(session, issue_id, user_id, data)
+
+# Rute za upravnike
+@router.get("/manager/all-issues", response_model=List[dict])
+def get_all_issues_for_manager(
+    request: Request,
+    session: Session = Depends(get_session),
+    status: str = Query("Primljeno"),
+    category: str = Query(None),
+    search: str = Query(None),
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    sort_by: str = Query("created_at_desc"),
+    page: int = Query(1),
+    page_size: int = Query(10),
+):
+    user_id = get_current_user_id(request)
+    filters = {
+        "status": status, 
+        "category": category, 
+        "search": search, 
+        "date_from": date_from, 
+        "date_to": date_to, 
+        "sort_by": sort_by
+    }
+    issues = issue_service.get_all_issues_for_manager_dict(session, user_id, filters, page, page_size)
+    return issues
+
+@router.get("/manager/contractors", response_model=List[dict])
+def get_available_contractors(
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    user_id = get_current_user_id(request)
+    contractors = issue_service.get_available_contractors(session, user_id)
+    return contractors
+
+@router.post("/manager/issues/{issue_id}/assign", response_model=dict)
+def assign_contractor_to_issue(
+    issue_id: int,
+    contractor_id: int = Body(...),
+    request: Request = None,
+    session: Session = Depends(get_session),
+):
+    user_id = get_current_user_id(request)
+    result = issue_service.assign_contractor_to_issue(session, user_id, issue_id, contractor_id)
+    return result 

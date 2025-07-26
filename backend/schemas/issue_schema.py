@@ -59,18 +59,27 @@ class HistoryIssue(BaseModel):
     rating: float | None = None
 
 class HistoryStats(BaseModel):
-    total_issues: int = Field(..., alias="totalIssues")
-    completed_issues: int = Field(..., alias="completedIssues")
-    rejected_issues: int = Field(..., alias="rejectedIssues")
-    in_progress_issues: int = Field(..., alias="inProgressIssues")
-    average_resolution_time: float | None = Field(None, alias="averageResolutionTime")
-    average_rating: float | None = Field(None, alias="averageRating")
+    total_issues: int
+    status_counts: dict
+    avg_resolution_time: float
 
-    model_config = {
-        "populate_by_name": True,
-        "alias_generator": to_camel,
-        "from_attributes": True,
-    }
+    class Config:
+        from_attributes = True
+
+# Nova šema za upravnike koja uključuje relacije
+class IssueForManager(BaseModel):
+    id: int
+    title: str
+    description: Optional[str] = None
+    location: Optional[str] = None
+    status: str
+    created_at: datetime
+    tenant: Optional[dict] = None  # Koristimo dict umjesto UserRead
+    category: Optional[IssueCategoryRead] = None
+    images: List[IssueImageRead] = []
+
+    class Config:
+        from_attributes = True
 
 class HistoryFilterParams(BaseModel):
     search: str | None = None
