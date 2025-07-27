@@ -8,9 +8,12 @@ class Assignment(SQLModel, table=True):
     contractor_id: int = Field(foreign_key="user.id")
     status: str = Field(default="Primljeno", max_length=50)
     estimated_cost: Optional[float] = None
+    actual_cost: Optional[float] = None
     planned_date: Optional[datetime] = None
     rejection_reason: Optional[str] = None
+    notes: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     issue: Optional["Issue"] = Relationship(back_populates="assignments")
     contractor: Optional["User"] = Relationship()

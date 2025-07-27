@@ -22,17 +22,35 @@ export default function NotificationsPage() {
       if (!res.ok) throw new Error("Greška prilikom dohvata notifikacija.")
       const data = await res.json()
       setNotifications(
-        (data as unknown as Array<Record<string, unknown>>).map((n) => ({
+        (data as unknown as Array<Record<string, unknown>>).map((n) => {
+          // Provjeri da li je napomena (ima message polje)
+          if (n.message) {
+            return {
+              id: n.id as number,
+              issueId: n.issue_id as number | undefined,
+              issueTitle: n.issue_title as string | undefined,
+              oldStatus: n.old_status as string | undefined,
+              newStatus: n.new_status as string | undefined,
+              changedBy: n.changed_by as string,
+              changedAt: n.created_at as string,
+              isRead: n.is_read as boolean,
+              type: "note" as const,
+              message: n.message as string,
+            }
+          } else {
+            return {
           id: n.id as number,
-          issueId: n.issue_id as number,
-          issueTitle: n.issue_title as string,
-          oldStatus: n.old_status as string,
-          newStatus: n.new_status as string,
+              issueId: n.issue_id as number | undefined,
+              issueTitle: n.issue_title as string | undefined,
+              oldStatus: n.old_status as string | undefined,
+              newStatus: n.new_status as string | undefined,
           changedBy: n.changed_by as string,
           changedAt: n.created_at as string,
           isRead: n.is_read as boolean,
-          type: "status_change",
-        }))
+              type: "status_change" as const,
+            }
+          }
+        })
       )
     } catch (e) {
       setError((e as Error).message)

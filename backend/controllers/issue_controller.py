@@ -137,7 +137,7 @@ def get_issue_rating(issue_id: int, request: Request, session: Session = Depends
 @router.post("/issues/{issue_id}/rating", response_model=RatingRead)
 def add_or_update_issue_rating(issue_id: int, data: RatingCreate, request: Request, session: Session = Depends(get_session)):
     user_id = get_current_user_id(request)
-    return rating_service.create_or_update_rating(session, issue_id, user_id, data)
+    return rating_service.create_or_update_rating(session, issue_id, user_id, data) 
 
 # Rute za upravnike
 @router.get("/manager/all-issues", response_model=List[dict])
@@ -155,11 +155,11 @@ def get_all_issues_for_manager(
 ):
     user_id = get_current_user_id(request)
     filters = {
-        "status": status, 
-        "category": category, 
-        "search": search, 
-        "date_from": date_from, 
-        "date_to": date_to, 
+        "status": status,
+        "category": category,
+        "search": search,
+        "date_from": date_from,
+        "date_to": date_to,
         "sort_by": sort_by
     }
     issues = issue_service.get_all_issues_for_manager_dict(session, user_id, filters, page, page_size)
@@ -183,4 +183,60 @@ def assign_contractor_to_issue(
 ):
     user_id = get_current_user_id(request)
     result = issue_service.assign_contractor_to_issue(session, user_id, issue_id, contractor_id)
+    return result
+
+@router.put("/manager/issues/{issue_id}/status", response_model=dict)
+def update_issue_status_manager(
+    issue_id: int,
+    status: str = Body(...),
+    request: Request = None,
+    session: Session = Depends(get_session),
+):
+    user_id = get_current_user_id(request)
+    result = issue_service.update_issue_status_manager(session, user_id, issue_id, status)
+    return result
+
+@router.get("/manager/all-issues-complete", response_model=List[dict])
+def get_all_issues_for_manager_complete(
+    request: Request,
+    session: Session = Depends(get_session),
+    status: str = Query("all"),
+    category: str = Query(None),
+    search: str = Query(None),
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    sort_by: str = Query("created_at_desc"),
+    page: int = Query(1),
+    page_size: int = Query(10),
+):
+    user_id = get_current_user_id(request)
+    filters = {
+        "status": status,
+        "category": category,
+        "search": search,
+        "date_from": date_from,
+        "date_to": date_to,
+        "sort_by": sort_by
+    }
+    issues = issue_service.get_all_issues_for_manager_complete(session, user_id, filters, page, page_size)
+    return issues
+
+@router.get("/manager/tenants", response_model=List[dict])
+def get_all_tenants_for_manager(
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    user_id = get_current_user_id(request)
+    tenants = issue_service.get_all_tenants_for_manager(session, user_id)
+    return tenants
+
+@router.post("/manager/notes", response_model=dict)
+def create_admin_note(
+    request: Request,
+    session: Session = Depends(get_session),
+    tenant_id: int = Body(...),
+    note: str = Body(...),
+):
+    user_id = get_current_user_id(request)
+    result = issue_service.create_admin_note(session, user_id, tenant_id, note)
     return result 

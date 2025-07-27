@@ -10,6 +10,7 @@ import MarkEmailReadIcon from "@mui/icons-material/MarkEmailRead"
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
 import PersonIcon from "@mui/icons-material/Person"
 import AccessTimeIcon from "@mui/icons-material/AccessTime"
+import NoteIcon from "@mui/icons-material/Note"
 import type { Notification } from "../types"
 
 const NotificationCardStyled = styled(Card)<{ isRead: boolean }>(({ theme, isRead }) => ({
@@ -82,11 +83,47 @@ export default function NotificationCard({ notification, onMarkAsRead }: Notific
     }
   }
 
+  const isNote = notification.type === "note" || notification.message
+
   return (
     <NotificationCardStyled isRead={notification.isRead}>
       <CardContent sx={{ p: 3, pl: notification.isRead ? 3 : 4 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
           <Box sx={{ flexGrow: 1 }}>
+            {isNote ? (
+              // Napomena
+              <>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                  <NoteIcon sx={{ color: "#42a5f5", fontSize: 20 }} />
+                  <Typography
+                    variant="h6"
+                    color="primary"
+                    sx={{
+                      fontWeight: notification.isRead ? 500 : 600,
+                      fontSize: "1.1rem",
+                    }}
+                  >
+                    Napomena od upravnika
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: "#fff",
+                    mb: 2,
+                    fontStyle: "italic",
+                    backgroundColor: "rgba(66, 165, 245, 0.1)",
+                    padding: 2,
+                    borderRadius: 1,
+                    border: "1px solid rgba(66, 165, 245, 0.2)",
+                  }}
+                >
+                  "{notification.message}"
+                </Typography>
+              </>
+            ) : (
+              // Status promjena
+              <>
             <Typography
               variant="h6"
               color="primary"
@@ -102,10 +139,16 @@ export default function NotificationCard({ notification, onMarkAsRead }: Notific
               <Typography variant="body2" color="text.secondary">
                 Status promijenjen sa
               </Typography>
+                  {notification.oldStatus && (
               <Chip label={notification.oldStatus} color={getStatusColor(notification.oldStatus)} size="small" />
+                  )}
               <ArrowForwardIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                  {notification.newStatus && (
               <Chip label={notification.newStatus} color={getStatusColor(notification.newStatus)} size="small" />
+                  )}
             </Box>
+              </>
+            )}
           </Box>
           {!notification.isRead && (
             <IconButton
@@ -138,9 +181,11 @@ export default function NotificationCard({ notification, onMarkAsRead }: Notific
               </Typography>
             </Box>
           </Box>
+          {!isNote && notification.issueId && (
           <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic" }}>
             Issue #{notification.issueId}
           </Typography>
+          )}
         </Box>
       </CardContent>
     </NotificationCardStyled>

@@ -5,55 +5,74 @@ import Box from "@mui/material/Box"
 import Container from "@mui/material/Container"
 import Paper from "@mui/material/Paper"
 import Typography from "@mui/material/Typography"
-import IconButton from "@mui/material/IconButton"
+import AppBar from "@mui/material/AppBar"
+import Toolbar from "@mui/material/Toolbar"
+import Button from "@mui/material/Button"
+import SvgIcon, { type SvgIconProps } from "@mui/material/SvgIcon"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import { useRouter } from "next/navigation"
 import { IssueFilters } from "./IssueFilters"
 import { CategorizedIssuesList } from "./CategorizedIssuesList"
-import type { FilterState } from "../types"
+import type { FilterOptions } from "../types"
+
+function FixTrackIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 32 32" fontSize="large">
+      <circle cx="16" cy="16" r="15" fill="#42a5f5" />
+      <rect x="10" y="10" width="12" height="12" rx="3" fill="#111" />
+    </SvgIcon>
+  )
+}
 
 export function OtherIssuesLayout() {
   const router = useRouter()
-  const [filters, setFilters] = useState<FilterState>({
-    search: "",
+  const [filters, setFilters] = useState<FilterOptions>({
+    searchTerm: "",
     dateFrom: "",
     dateTo: "",
-    category: "",
-    priority: "",
-    status: "",
+    category: "all",
+    priority: "all",
   })
 
-  const handleFilterChange = (newFilters: Partial<FilterState>) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }))
+  const handleFilterChange = (newFilters: FilterOptions) => {
+    setFilters(newFilters)
   }
 
   const handleClearFilters = () => {
     setFilters({
-      search: "",
+      searchTerm: "",
       dateFrom: "",
       dateTo: "",
-      category: "",
-      priority: "",
-      status: "",
+      category: "all",
+      priority: "all",
     })
+  }
+
+  const handleBack = () => {
+    router.back()
+  }
+
+  const handleHome = () => {
+    router.push("/")
   }
 
   return (
     <Box sx={{ minHeight: "100vh", backgroundColor: "#121212" }}>
       {/* Header */}
-      <Paper
+      <AppBar
+        position="static"
+        color="transparent"
+        elevation={0}
         sx={{
-          backgroundColor: "#1e1e1e",
+          background: "#181818",
           borderBottom: "1px solid #333",
-          borderRadius: 0,
-          py: 2,
-          px: 3,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Toolbar sx={{ justifyContent: "space-between" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <IconButton
-              onClick={() => router.back()}
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={handleBack}
               sx={{
                 color: "#42a5f5",
                 "&:hover": {
@@ -61,49 +80,72 @@ export function OtherIssuesLayout() {
                 },
               }}
             >
-              <ArrowBackIcon />
-            </IconButton>
-            <Typography variant="body1" sx={{ color: "#42a5f5", fontWeight: 500 }}>
               Nazad
+            </Button>
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              cursor: "pointer",
+            }}
+            onClick={handleHome}
+          >
+            <FixTrackIcon sx={{ mr: 2 }} />
+            <Typography
+              variant="h6"
+              color="primary"
+              sx={{
+                fontWeight: 700,
+                "&:hover": {
+                  color: "#1976d2",
+                },
+              }}
+            >
+              FixTrack
             </Typography>
           </Box>
+          <Box sx={{ width: "100px" }} /> {/* Spacer for centering */}
+        </Toolbar>
+      </AppBar>
+
+      {/* Main Content */}
+      <Box component="main" sx={{ py: 3 }}>
+        <Container maxWidth="xl">
+          {/* Header */}
+          <Box sx={{ mb: 4 }}>
           <Typography
-            variant="h6"
+              variant="h4"
             sx={{
               color: "#42a5f5",
               fontWeight: 700,
-              fontSize: "1.25rem",
+                mb: 1,
             }}
           >
-            FixTrack
+              Ostali kvarovi
           </Typography>
-          <Box sx={{ width: 80 }} /> {/* Spacer for centering */}
-        </Box>
-      </Paper>
-
-      {/* Content */}
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" sx={{ color: "#fff", fontWeight: 600, mb: 1 }}>
-            Ostali Issue-i
+            <Typography variant="body1" sx={{ color: "#b0b0b0", mb: 2 }}>
+              Pregled svih prijava kvarova organizovanih po kategorijama (osim onih sa statusom "Primljeno")
           </Typography>
-          <Typography variant="body1" sx={{ color: "#b0b0b0" }}>
-            Pregled svih issue-a organizovanih po kategorijama (osim onih sa statusom "primljeno")
+            <Typography variant="body2" sx={{ color: "#666" }}>
+              Kao upravnik, možete vidjeti sve prijave i promijeniti njihov status
           </Typography>
         </Box>
 
+          {/* Filters */}
         <Paper
           sx={{
             backgroundColor: "#1e1e1e",
             border: "1px solid #333",
             borderRadius: 2,
             p: 3,
-            mb: 4,
+              mb: 3,
           }}
         >
-          <IssueFilters filters={filters} onFilterChange={handleFilterChange} onClearFilters={handleClearFilters} />
+            <IssueFilters filters={filters} onFilterChange={handleFilterChange} />
         </Paper>
 
+          {/* Issues List */}
         <Paper
           sx={{
             backgroundColor: "#1e1e1e",
@@ -115,6 +157,7 @@ export function OtherIssuesLayout() {
           <CategorizedIssuesList filters={filters} />
         </Paper>
       </Container>
+      </Box>
     </Box>
   )
 }

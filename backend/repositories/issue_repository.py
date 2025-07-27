@@ -250,4 +250,55 @@ def get_issues_for_manager_simple(session: Session, filters: dict, page: int = 1
     
     issues = list(session.exec(statement))
     
+    return issues
+
+def get_issues_for_manager_complete(session: Session, filters: dict, page: int = 1, page_size: int = 10):
+    """Dohvata sve issue-e bez filtriranja po statusu"""
+    statement = select(Issue)
+    
+    # Dodaj relacije
+    statement = statement.options(
+        selectinload(Issue.tenant),
+        selectinload(Issue.category),
+        selectinload(Issue.images)
+    )
+    
+    # Dodaj filtere
+    if filters.get("status") and filters["status"] != "all":
+        statement = statement.where(Issue.status == filters["status"])
+    
+    if filters.get("search"):
+        search = f"%{filters['search']}%"
+        statement = statement.where(
+            (Issue.title.ilike(search)) |
+            (Issue.description.ilike(search)) |
+            (Issue.location.ilike(search))
+        )
+    
+    if filters.get("category"):
+        statement = statement.join(Issue.category).where(IssueCategory.name == filters["category"])
+    
+    if filters.get("date_from"):
+        statement = statement.where(Issue.created_at >= filters["date_from"])
+    
+    if filters.get("date_to"):
+        statement = statement.where(Issue.created_at <= filters["date_to"])
+    
+    # Sorting
+    sort_by = filters.get("sort_by", "created_at_desc")
+    if sort_by == "created_at_asc":
+        statement = statement.order_by(Issue.created_at.asc())
+    elif sort_by == "created_at_desc":
+        statement = statement.order_by(Issue.created_at.desc())
+    elif sort_by == "title_asc":
+        statement = statement.order_by(Issue.title.asc())
+    elif sort_by == "title_desc":
+        statement = statement.order_by(Issue.title.desc())
+    
+    # Pagination
+    offset = (page - 1) * page_size
+    statement = statement.offset(offset).limit(page_size)
+    
+    issues = list(session.exec(statement))
+    
     return issues 

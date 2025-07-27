@@ -1,25 +1,31 @@
-export interface FilterState {
-  search: string
+export interface FilterOptions {
+  searchTerm: string
   dateFrom: string
   dateTo: string
   category: string
   priority: string
-  status: string
 }
 
 export interface Issue {
-  id: string
+  id: number
   title: string
-  description: string
-  category: "voda" | "struja" | "grijanje" | "ostalo"
-  priority: "visok" | "srednji" | "nizak"
-  status: "u toku" | "završeno" | "na čekanju" | "otkazano"
+  description: string | null
+  location: string | null
+  status: string
+  created_at: string
   tenant: {
-    name: string
-    apartment: string
+    id: number
+    full_name: string
+    email: string
     phone: string
-  }
-  location: string
-  dateReported: string
-  contractor?: string
+    address: string
+  } | null
+  category: {
+    id: number
+    name: string
+  } | null
+  images: Array<{
+    id: number
+    image_url: string
+  }>
 }

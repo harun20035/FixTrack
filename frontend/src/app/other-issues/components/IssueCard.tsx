@@ -14,28 +14,63 @@ import Menu from "@mui/material/Menu"
 import MenuItem from "@mui/material/MenuItem"
 import Divider from "@mui/material/Divider"
 import CircularProgress from "@mui/material/CircularProgress"
+import Dialog from "@mui/material/Dialog"
+import DialogTitle from "@mui/material/DialogTitle"
+import DialogContent from "@mui/material/DialogContent"
+import DialogActions from "@mui/material/DialogActions"
+import FormControl from "@mui/material/FormControl"
+import InputLabel from "@mui/material/InputLabel"
+import Select from "@mui/material/Select"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
 import LocationOnIcon from "@mui/icons-material/LocationOn"
 import PhoneIcon from "@mui/icons-material/Phone"
 import PersonIcon from "@mui/icons-material/Person"
 import MoreVertIcon from "@mui/icons-material/MoreVert"
 import SyncIcon from "@mui/icons-material/Sync"
+import { authFetch } from "@/utils/authFetch"
 import type { Issue } from "../types"
 
 interface IssueCardProps {
   issue: Issue
+  onStatusChange: (updatedIssue: Issue) => void
 }
 
-export function IssueCard({ issue }: IssueCardProps) {
+export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
   const [isChangingStatus, setIsChangingStatus] = useState(false)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const [showStatusModal, setShowStatusModal] = useState(false)
+  const [selectedStatus, setSelectedStatus] = useState(issue.status)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
 
   const handleChangeStatus = async () => {
-    setIsChangingStatus(true)
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    setIsChangingStatus(false)
-    // Here you would typically update the issue status
+    if (selectedStatus === issue.status) {
+      setShowStatusModal(false)
+      return
+    }
+
+    setUpdatingStatus(true)
+    try {
+      const response = await authFetch(`http://localhost:8000/api/manager/issues/${issue.id}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(selectedStatus),
+      })
+
+      if (!response.ok) {
+        throw new Error("Greška pri promjeni statusa")
+      }
+
+      const updatedIssue = { ...issue, status: selectedStatus }
+      onStatusChange(updatedIssue)
+      setShowStatusModal(false)
+    } catch (error) {
+      console.error("Greška pri promjeni statusa:", error)
+      alert("Greška pri promjeni statusa")
+    } finally {
+      setUpdatingStatus(false)
+    }
   }
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -46,44 +81,26 @@ export function IssueCard({ issue }: IssueCardProps) {
     setAnchorEl(null)
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "visok":
-        return "#f44336"
-      case "srednji":
-        return "#ff9800"
-      case "nizak":
-        return "#4caf50"
-      default:
-        return "#666"
-    }
-  }
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "voda":
-        return "#2196f3"
-      case "struja":
-        return "#ff9800"
-      case "grijanje":
-        return "#f44336"
-      case "ostalo":
-        return "#9c27b0"
-      default:
-        return "#666"
-    }
+  const handleOpenStatusModal = () => {
+    setSelectedStatus(issue.status)
+    setShowStatusModal(true)
+    handleMenuClose()
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "u toku":
+      case "Dodijeljeno izvođaču":
         return "#2196f3"
-      case "završeno":
-        return "#4caf50"
-      case "na čekanju":
-        return "#ffc107"
-      case "otkazano":
+      case "Na lokaciji":
+        return "#ff9800"
+      case "Popravka u toku":
         return "#f44336"
+      case "Čeka dijelove":
+        return "#ffc107"
+      case "Završeno":
+        return "#4caf50"
+      case "Otkazano":
+        return "#9e9e9e"
       default:
         return "#666"
     }
@@ -91,13 +108,17 @@ export function IssueCard({ issue }: IssueCardProps) {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case "u toku":
-        return "U TOKU"
-      case "završeno":
+      case "Dodijeljeno izvođaču":
+        return "DODIJELJENO IZVOĐAČU"
+      case "Na lokaciji":
+        return "NA LOKACIJI"
+      case "Popravka u toku":
+        return "POPRAVKA U TOKU"
+      case "Čeka dijelove":
+        return "ČEKA DIJELOVE"
+      case "Završeno":
         return "ZAVRŠENO"
-      case "na čekanju":
-        return "NA ČEKANJU"
-      case "otkazano":
+      case "Otkazano":
         return "OTKAZANO"
       default:
         return status.toUpperCase()
@@ -106,24 +127,32 @@ export function IssueCard({ issue }: IssueCardProps) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString("bs-BA", {
+    return date.toLocaleDateString("hr-HR", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
     })
   }
 
+  const availableStatuses = [
+    "Dodijeljeno izvođaču",
+    "Na lokaciji", 
+    "Popravka u toku",
+    "Čeka dijelove",
+    "Završeno",
+    "Otkazano"
+  ].filter(status => status !== issue.status)
+
   return (
+    <>
     <Card
       sx={{
         backgroundColor: "#2a2a2a",
         border: "1px solid #444",
         borderRadius: 2,
-        transition: "all 0.3s ease",
         "&:hover": {
           borderColor: "#42a5f5",
-          transform: "translateY(-2px)",
-          boxShadow: "0 8px 25px rgba(66, 165, 245, 0.15)",
+            boxShadow: "0 4px 8px rgba(66, 165, 245, 0.2)",
         },
       }}
     >
@@ -131,60 +160,9 @@ export function IssueCard({ issue }: IssueCardProps) {
         {/* Header */}
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
           <Box sx={{ flex: 1 }}>
-            <Typography
-              variant="h6"
-              sx={{
-                color: "#fff",
-                fontWeight: 600,
-                mb: 1,
-                lineHeight: 1.3,
-              }}
-            >
+              <Typography variant="h6" sx={{ color: "#fff", fontWeight: 600, mb: 1 }}>
               {issue.title}
             </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                color: "#b0b0b0",
-                mb: 2,
-                lineHeight: 1.5,
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
-              {issue.description}
-            </Typography>
-          </Box>
-
-          <IconButton onClick={handleMenuOpen} sx={{ color: "#b0b0b0" }}>
-            <MoreVertIcon />
-          </IconButton>
-        </Box>
-
-        {/* Badges */}
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 3 }}>
-          <Chip
-            label={issue.priority.toUpperCase()}
-            size="small"
-            sx={{
-              backgroundColor: getPriorityColor(issue.priority),
-              color: "#fff",
-              fontWeight: 600,
-              fontSize: "0.75rem",
-            }}
-          />
-          <Chip
-            label={issue.category.toUpperCase()}
-            size="small"
-            sx={{
-              backgroundColor: getCategoryColor(issue.category),
-              color: "#fff",
-              fontWeight: 600,
-              fontSize: "0.75rem",
-            }}
-          />
           <Chip
             label={getStatusText(issue.status)}
             size="small"
@@ -196,77 +174,182 @@ export function IssueCard({ issue }: IssueCardProps) {
             }}
           />
         </Box>
-
-        {/* Tenant Info */}
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-            <PersonIcon sx={{ color: "#42a5f5", fontSize: 18 }} />
-            <Typography variant="body2" sx={{ color: "#fff", fontWeight: 500 }}>
-              {issue.tenant.name}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#b0b0b0" }}>
-              • {issue.tenant.apartment}
-            </Typography>
+            <IconButton
+              onClick={handleMenuOpen}
+              sx={{
+                color: "#b0b0b0",
+                "&:hover": {
+                  backgroundColor: "rgba(66, 165, 245, 0.1)",
+                  color: "#42a5f5",
+                },
+              }}
+            >
+              <MoreVertIcon />
+            </IconButton>
           </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-            <PhoneIcon sx={{ color: "#42a5f5", fontSize: 18 }} />
-            <Typography variant="body2" sx={{ color: "#b0b0b0" }}>
-              {issue.tenant.phone}
+          {/* Description */}
+          {issue.description && (
+            <Typography variant="body2" sx={{ color: "#b0b0b0", mb: 3 }}>
+              {issue.description}
             </Typography>
-          </Box>
+          )}
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-            <LocationOnIcon sx={{ color: "#42a5f5", fontSize: 18 }} />
+          {/* Details */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 3 }}>
+            {issue.location && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <LocationOnIcon sx={{ color: "#42a5f5", fontSize: 16 }} />
             <Typography variant="body2" sx={{ color: "#b0b0b0" }}>
               {issue.location}
             </Typography>
           </Box>
+            )}
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-            <CalendarTodayIcon sx={{ color: "#42a5f5", fontSize: 18 }} />
-            <Typography variant="body2" sx={{ color: "#b0b0b0" }}>
-              Prijavljeno: {formatDate(issue.dateReported)}
-            </Typography>
-          </Box>
-
-          {issue.contractor && (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <PersonIcon sx={{ color: "#4caf50", fontSize: 18 }} />
-              <Typography variant="body2" sx={{ color: "#4caf50", fontWeight: 500 }}>
-                Izvođač: {issue.contractor}
+              <CalendarTodayIcon sx={{ color: "#42a5f5", fontSize: 16 }} />
+              <Typography variant="body2" sx={{ color: "#b0b0b0" }}>
+                Prijavljeno: {formatDate(issue.created_at)}
               </Typography>
             </Box>
+
+            {issue.tenant && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <PersonIcon sx={{ color: "#42a5f5", fontSize: 16 }} />
+                <Typography variant="body2" sx={{ color: "#b0b0b0" }}>
+                  {issue.tenant.full_name}
+                </Typography>
+                {issue.tenant.phone && (
+                  <>
+                    <PhoneIcon sx={{ color: "#42a5f5", fontSize: 16, ml: 1 }} />
+                    <Typography variant="body2" sx={{ color: "#b0b0b0" }}>
+                      {issue.tenant.phone}
+                    </Typography>
+                  </>
+                )}
+              </Box>
+            )}
+
+            {issue.category && (
+              <Chip
+                label={issue.category.name}
+                size="small"
+                variant="outlined"
+                sx={{
+                  borderColor: "#42a5f5",
+                  color: "#42a5f5",
+                  alignSelf: "flex-start",
+                }}
+              />
           )}
         </Box>
 
-        <Divider sx={{ borderColor: "#444", mb: 3 }} />
-
-        {/* Action Button */}
+          {/* Actions */}
+          <Box sx={{ display: "flex", gap: 1 }}>
         <Button
-          fullWidth
-          variant="contained"
-          startIcon={isChangingStatus ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : <SyncIcon />}
-          onClick={handleChangeStatus}
+              variant="outlined"
+              size="small"
+              startIcon={isChangingStatus ? <CircularProgress size={16} /> : <SyncIcon />}
+              onClick={handleOpenStatusModal}
           disabled={isChangingStatus}
           sx={{
-            background: "linear-gradient(45deg, #4caf50 30%, #388e3c 90%)",
+                borderColor: "#42a5f5",
+                color: "#42a5f5",
+                "&:hover": {
+                  backgroundColor: "rgba(66, 165, 245, 0.1)",
+                  borderColor: "#1976d2",
+                },
+              }}
+            >
+              Promijeni status
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Status Change Modal */}
+      <Dialog
+        open={showStatusModal}
+        onClose={() => setShowStatusModal(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: "#2a2a2a",
+            border: "1px solid #444",
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: "#fff", borderBottom: "1px solid #444" }}>
+          Promijeni status prijave
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Typography variant="body2" sx={{ color: "#b0b0b0", mb: 2 }}>
+            Trenutni status: <strong style={{ color: "#fff" }}>{issue.status}</strong>
+          </Typography>
+          
+          <FormControl fullWidth>
+            <InputLabel sx={{ color: "#b0b0b0" }}>Novi status</InputLabel>
+            <Select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              sx={{
+                backgroundColor: "#1e1e1e",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#444",
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#42a5f5",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#42a5f5",
+                },
+                "& .MuiSelect-select": {
             color: "#fff",
-            fontWeight: 600,
-            py: 1.5,
+                },
+                "& .MuiSelect-icon": {
+                  color: "#b0b0b0",
+                },
+              }}
+            >
+              <MenuItem value={issue.status} disabled>
+                {issue.status} (trenutni)
+              </MenuItem>
+              {availableStatuses.map((status) => (
+                <MenuItem key={status} value={status}>
+                  {status}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: "1px solid #444" }}>
+          <Button
+            onClick={() => setShowStatusModal(false)}
+            sx={{ color: "#b0b0b0" }}
+          >
+            Odustani
+          </Button>
+          <Button
+            onClick={handleChangeStatus}
+            disabled={updatingStatus || selectedStatus === issue.status}
+            variant="contained"
+            sx={{
+              backgroundColor: "#42a5f5",
             "&:hover": {
-              background: "linear-gradient(45deg, #388e3c 30%, #2e7d32 90%)",
+                backgroundColor: "#1976d2",
             },
             "&:disabled": {
-              background: "#666",
-              color: "#999",
+                backgroundColor: "#666",
             },
           }}
         >
-          {isChangingStatus ? "Mijenjanje statusa..." : "Promjeni Status"}
+            {updatingStatus ? <CircularProgress size={20} /> : "Promijeni status"}
         </Button>
+        </DialogActions>
+      </Dialog>
 
-        {/* Context Menu */}
+      {/* Menu */}
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
@@ -284,12 +367,10 @@ export function IssueCard({ issue }: IssueCardProps) {
             },
           }}
         >
-          <MenuItem onClick={handleMenuClose}>Prikaži detalje</MenuItem>
-          <MenuItem onClick={handleMenuClose}>Dodaj napomenu</MenuItem>
-          <MenuItem onClick={handleMenuClose}>Kontaktiraj stanara</MenuItem>
-          <MenuItem onClick={handleMenuClose}>Pošalji obavještenje</MenuItem>
+        <MenuItem onClick={handleOpenStatusModal}>
+          Promijeni status
+        </MenuItem>
         </Menu>
-      </CardContent>
-    </Card>
+    </>
   )
 }

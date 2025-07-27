@@ -52,7 +52,7 @@ export default function IssuesList({ filters }: IssuesListProps) {
         const params = new URLSearchParams()
         params.append('status', 'Primljeno')
         
-        if (filters.searchTerm) {
+      if (filters.searchTerm) {
           params.append('search', filters.searchTerm)
         }
         if (filters.category && filters.category !== 'all') {
@@ -154,7 +154,7 @@ export default function IssuesList({ filters }: IssuesListProps) {
       console.error('Error assigning contractor:', err)
       alert(err instanceof Error ? err.message : 'Greška prilikom dodjele izvođača')
     } finally {
-      setAssigningIssue(null)
+    setAssigningIssue(null)
       setSelectedIssueId(null)
     }
   }

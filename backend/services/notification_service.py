@@ -13,6 +13,7 @@ def create_new_notification(session: Session, data: NotificationCreate) -> Notif
         old_status=data.old_status,
         new_status=data.new_status,
         changed_by=data.changed_by,
+        message=data.message,
     )
     return create_notification(session, notification)
 
@@ -20,7 +21,7 @@ def get_user_notifications(session: Session, user_id: int):
     notifications = get_notifications_for_user(session, user_id)
     result = []
     for n in notifications:
-        issue = session.get(Issue, n.issue_id)
+        issue = session.get(Issue, n.issue_id) if n.issue_id else None
         result.append(NotificationRead(
             id=n.id,
             user_id=n.user_id,
@@ -28,6 +29,7 @@ def get_user_notifications(session: Session, user_id: int):
             old_status=n.old_status,
             new_status=n.new_status,
             changed_by=n.changed_by,
+            message=n.message,
             is_read=n.is_read,
             created_at=n.created_at,
             issue_title=issue.title if issue else None

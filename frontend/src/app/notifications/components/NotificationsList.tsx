@@ -79,7 +79,7 @@ export default function NotificationsList({ notifications, loading, error, setNo
           <Typography variant="h6" gutterBottom>
             Nema notifikacija
           </Typography>
-          <Typography variant="body2">Ovdje će se pojaviti notifikacije o promjenama statusa vaših prijava.</Typography>
+          <Typography variant="body2">Ovdje će se pojaviti notifikacije o promjenama statusa vaših prijava i napomene od upravnika.</Typography>
         </Box>
       )}
     </Box>

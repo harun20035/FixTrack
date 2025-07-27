@@ -1,13 +1,14 @@
 export interface Notification {
   id: number
-  issueId: number
-  issueTitle: string
-  oldStatus: string
-  newStatus: string
+  issueId?: number
+  issueTitle?: string
+  oldStatus?: string
+  newStatus?: string
   changedBy: string
   changedAt: string
   isRead: boolean
-  type: "status_change"
+  type: "status_change" | "note"
+  message?: string
 }
 
 export interface NotificationCounts {
