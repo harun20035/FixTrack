@@ -210,7 +210,6 @@ export default function IssuesList({ filters }: IssuesListProps) {
           <Grid item xs={12} lg={6} key={issue.id}>
             <IssueCard
               issue={issue}
-              onAssignContractor={handleAssignContractor}
               isAssigning={assigningIssue === issue.id}
             />
           </Grid>

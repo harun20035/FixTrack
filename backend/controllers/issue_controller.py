@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, File, Form, Request,
 from sqlmodel import Session
 from database import engine
 from services import issue_service
-from schemas.issue_schema import IssueCreate, IssueRead, IssueCategoryRead, IssueStatusUpdate, HistoryIssue, HistoryStats, HistoryFilterParams, IssueForManager
+from schemas.issue_schema import IssueCreate, IssueRead, IssueCategoryRead, IssueStatusUpdate, HistoryIssue, HistoryStats, HistoryFilterParams, IssueForManager, ContractorAssignmentRequest
 import jwt
 import os
 from typing import List
@@ -165,6 +165,29 @@ def get_all_issues_for_manager(
     issues = issue_service.get_all_issues_for_manager_dict(session, user_id, filters, page, page_size)
     return issues
 
+@router.get("/manager/other-issues", response_model=List[dict])
+def get_other_issues_for_manager(
+    request: Request,
+    session: Session = Depends(get_session),
+    category: str = Query(None),
+    search: str = Query(None),
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    sort_by: str = Query("created_at_desc"),
+    page: int = Query(1),
+    page_size: int = Query(10),
+):
+    user_id = get_current_user_id(request)
+    filters = {
+        "category": category,
+        "search": search,
+        "date_from": date_from,
+        "date_to": date_to,
+        "sort_by": sort_by
+    }
+    issues = issue_service.get_other_issues_for_manager(session, user_id, filters, page, page_size)
+    return issues
+
 @router.get("/manager/contractors", response_model=List[dict])
 def get_available_contractors(
     request: Request,
@@ -177,12 +200,12 @@ def get_available_contractors(
 @router.post("/manager/issues/{issue_id}/assign", response_model=dict)
 def assign_contractor_to_issue(
     issue_id: int,
-    contractor_id: int = Body(...),
+    data: ContractorAssignmentRequest,
     request: Request = None,
     session: Session = Depends(get_session),
 ):
     user_id = get_current_user_id(request)
-    result = issue_service.assign_contractor_to_issue(session, user_id, issue_id, contractor_id)
+    result = issue_service.assign_contractor_to_issue(session, user_id, issue_id, data.contractor_id)
     return result
 
 @router.put("/manager/issues/{issue_id}/status", response_model=dict)
@@ -239,4 +262,15 @@ def create_admin_note(
 ):
     user_id = get_current_user_id(request)
     result = issue_service.create_admin_note(session, user_id, tenant_id, note)
+    return result
+
+@router.post("/manager/issues/{issue_id}/notes", response_model=dict)
+def create_issue_note(
+    issue_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+    note: str = Body(...),
+):
+    user_id = get_current_user_id(request)
+    result = issue_service.create_issue_note(session, user_id, issue_id, note)
     return result 

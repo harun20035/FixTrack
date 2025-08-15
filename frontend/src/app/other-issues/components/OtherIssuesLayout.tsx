@@ -5,27 +5,11 @@ import Box from "@mui/material/Box"
 import Container from "@mui/material/Container"
 import Paper from "@mui/material/Paper"
 import Typography from "@mui/material/Typography"
-import AppBar from "@mui/material/AppBar"
-import Toolbar from "@mui/material/Toolbar"
-import Button from "@mui/material/Button"
-import SvgIcon, { type SvgIconProps } from "@mui/material/SvgIcon"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
-import { useRouter } from "next/navigation"
 import { IssueFilters } from "./IssueFilters"
 import { CategorizedIssuesList } from "./CategorizedIssuesList"
 import type { FilterOptions } from "../types"
 
-function FixTrackIcon(props: SvgIconProps) {
-  return (
-    <SvgIcon {...props} viewBox="0 0 32 32" fontSize="large">
-      <circle cx="16" cy="16" r="15" fill="#42a5f5" />
-      <rect x="10" y="10" width="12" height="12" rx="3" fill="#111" />
-    </SvgIcon>
-  )
-}
-
 export function OtherIssuesLayout() {
-  const router = useRouter()
   const [filters, setFilters] = useState<FilterOptions>({
     searchTerm: "",
     dateFrom: "",
@@ -48,66 +32,37 @@ export function OtherIssuesLayout() {
     })
   }
 
-  const handleBack = () => {
-    router.back()
-  }
-
-  const handleHome = () => {
-    router.push("/")
-  }
-
   return (
     <Box sx={{ minHeight: "100vh", backgroundColor: "#121212" }}>
       {/* Header */}
-      <AppBar
-        position="static"
-        color="transparent"
-        elevation={0}
+      <Box
         sx={{
           background: "#181818",
           borderBottom: "1px solid #333",
+          p: 3,
         }}
       >
-        <Toolbar sx={{ justifyContent: "space-between" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Button
-              startIcon={<ArrowBackIcon />}
-              onClick={handleBack}
-              sx={{
-                color: "#42a5f5",
-                "&:hover": {
-                  backgroundColor: "rgba(66, 165, 245, 0.1)",
-                },
-              }}
-            >
-              Nazad
-            </Button>
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              cursor: "pointer",
-            }}
-            onClick={handleHome}
-          >
-            <FixTrackIcon sx={{ mr: 2 }} />
-            <Typography
-              variant="h6"
-              color="primary"
-              sx={{
-                fontWeight: 700,
-                "&:hover": {
-                  color: "#1976d2",
-                },
-              }}
-            >
-              FixTrack
-            </Typography>
-          </Box>
-          <Box sx={{ width: "100px" }} /> {/* Spacer for centering */}
-        </Toolbar>
-      </AppBar>
+        <Typography
+          variant="h4"
+          color="primary"
+          sx={{
+            fontWeight: 700,
+            textAlign: "center",
+          }}
+        >
+          Ostale Prijave Kvarova
+        </Typography>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{
+            textAlign: "center",
+            mt: 1,
+          }}
+        >
+          Pregled i upravljanje svim prijavama koje nisu u statusu "Primljeno"
+        </Typography>
+      </Box>
 
       {/* Main Content */}
       <Box component="main" sx={{ py: 3 }}>

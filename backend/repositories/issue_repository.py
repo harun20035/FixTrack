@@ -253,20 +253,25 @@ def get_issues_for_manager_simple(session: Session, filters: dict, page: int = 1
     return issues
 
 def get_issues_for_manager_complete(session: Session, filters: dict, page: int = 1, page_size: int = 10):
-    """Dohvata sve issue-e bez filtriranja po statusu"""
+    """Dohvata sve issue-e koji NISU statusa 'Primljeno'"""
+    print(f"DEBUG: get_issues_for_manager_complete called with filters: {filters}, page: {page}, page_size: {page_size}")
+
     statement = select(Issue)
-    
+
     # Dodaj relacije
     statement = statement.options(
         selectinload(Issue.tenant),
         selectinload(Issue.category),
         selectinload(Issue.images)
     )
-    
+
     # Dodaj filtere
+    # Isključi 'Primljeno' bez obzira na ostale filtere
+    statement = statement.where(Issue.status != "Primljeno")
+
     if filters.get("status") and filters["status"] != "all":
         statement = statement.where(Issue.status == filters["status"])
-    
+
     if filters.get("search"):
         search = f"%{filters['search']}%"
         statement = statement.where(
@@ -274,16 +279,16 @@ def get_issues_for_manager_complete(session: Session, filters: dict, page: int =
             (Issue.description.ilike(search)) |
             (Issue.location.ilike(search))
         )
-    
+
     if filters.get("category"):
         statement = statement.join(Issue.category).where(IssueCategory.name == filters["category"])
-    
+
     if filters.get("date_from"):
         statement = statement.where(Issue.created_at >= filters["date_from"])
-    
+
     if filters.get("date_to"):
         statement = statement.where(Issue.created_at <= filters["date_to"])
-    
+
     # Sorting
     sort_by = filters.get("sort_by", "created_at_desc")
     if sort_by == "created_at_asc":
@@ -294,11 +299,19 @@ def get_issues_for_manager_complete(session: Session, filters: dict, page: int =
         statement = statement.order_by(Issue.title.asc())
     elif sort_by == "title_desc":
         statement = statement.order_by(Issue.title.desc())
-    
+
     # Pagination
     offset = (page - 1) * page_size
     statement = statement.offset(offset).limit(page_size)
-    
+    print(f"DEBUG: SQL offset: {offset}, limit: {page_size}")
+
+    print(f"DEBUG: Final SQL statement: {statement}")
+
     issues = list(session.exec(statement))
-    
-    return issues 
+    print(f"DEBUG: Repository returned {len(issues)} issues")
+
+    # Debug: ispiši prvih nekoliko issue-a
+    for i, issue in enumerate(issues[:3]):
+        print(f"DEBUG: Repository Issue {i+1}: ID={issue.id}, Status={issue.status}, Title={issue.title}")
+
+    return issues

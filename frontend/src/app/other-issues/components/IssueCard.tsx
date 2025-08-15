@@ -21,12 +21,14 @@ import DialogActions from "@mui/material/DialogActions"
 import FormControl from "@mui/material/FormControl"
 import InputLabel from "@mui/material/InputLabel"
 import Select from "@mui/material/Select"
+import TextField from "@mui/material/TextField"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
 import LocationOnIcon from "@mui/icons-material/LocationOn"
 import PhoneIcon from "@mui/icons-material/Phone"
 import PersonIcon from "@mui/icons-material/Person"
 import MoreVertIcon from "@mui/icons-material/MoreVert"
 import SyncIcon from "@mui/icons-material/Sync"
+import DescriptionIcon from "@mui/icons-material/Description"
 import { authFetch } from "@/utils/authFetch"
 import type { Issue } from "../types"
 
@@ -41,6 +43,9 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState(issue.status)
   const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [showNoteModal, setShowNoteModal] = useState(false)
+  const [noteText, setNoteText] = useState("")
+  const [addingNote, setAddingNote] = useState(false)
 
   const handleChangeStatus = async () => {
     if (selectedStatus === issue.status) {
@@ -85,6 +90,34 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
     setSelectedStatus(issue.status)
     setShowStatusModal(true)
     handleMenuClose()
+  }
+
+  const handleAddNote = async () => {
+    if (!noteText.trim()) return
+    
+    setAddingNote(true)
+    try {
+      const response = await authFetch(`http://localhost:8000/api/manager/issues/${issue.id}/notes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ note: noteText.trim() }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Greška pri dodavanju napomene")
+      }
+
+      setShowNoteModal(false)
+      setNoteText("")
+      alert("Napomena je uspješno dodana!")
+    } catch (error) {
+      console.error("Greška pri dodavanju napomene:", error)
+      alert("Greška pri dodavanju napomene")
+    } finally {
+      setAddingNote(false)
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -246,13 +279,13 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
 
           {/* Actions */}
           <Box sx={{ display: "flex", gap: 1 }}>
-        <Button
+            <Button
               variant="outlined"
               size="small"
               startIcon={isChangingStatus ? <CircularProgress size={16} /> : <SyncIcon />}
               onClick={handleOpenStatusModal}
-          disabled={isChangingStatus}
-          sx={{
+              disabled={isChangingStatus}
+              sx={{
                 borderColor: "#42a5f5",
                 color: "#42a5f5",
                 "&:hover": {
@@ -262,6 +295,23 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
               }}
             >
               Promijeni status
+            </Button>
+            
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<DescriptionIcon />}
+              onClick={() => setShowNoteModal(true)}
+              sx={{
+                borderColor: "#22c55e",
+                color: "#22c55e",
+                "&:hover": {
+                  backgroundColor: "rgba(34, 197, 94, 0.1)",
+                  borderColor: "#16a34a",
+                },
+              }}
+            >
+              Dodaj napomenu
             </Button>
           </Box>
         </CardContent>
@@ -371,6 +421,82 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
           Promijeni status
         </MenuItem>
         </Menu>
+
+      {/* Note Modal */}
+      <Dialog
+        open={showNoteModal}
+        onClose={() => setShowNoteModal(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: "#2a2a2a",
+            border: "1px solid #444",
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: "#fff", borderBottom: "1px solid #444" }}>
+          Dodaj napomenu
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Typography variant="body2" sx={{ color: "#b0b0b0", mb: 2 }}>
+            Dodaj napomenu za prijavu: <strong style={{ color: "#fff" }}>{issue.title}</strong>
+          </Typography>
+          
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            placeholder="Unesite napomenu..."
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                backgroundColor: "#1e1e1e",
+                "& fieldset": {
+                  borderColor: "#444",
+                },
+                "&:hover fieldset": {
+                  borderColor: "#42a5f5",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#42a5f5",
+                },
+                "& .MuiInputBase-input": {
+                  color: "#fff",
+                },
+                "& .MuiInputBase-input::placeholder": {
+                  color: "#666",
+                },
+              },
+            }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: "1px solid #444" }}>
+          <Button
+            onClick={() => setShowNoteModal(false)}
+            sx={{ color: "#b0b0b0" }}
+          >
+            Odustani
+          </Button>
+          <Button
+            onClick={handleAddNote}
+            disabled={addingNote || !noteText.trim()}
+            variant="contained"
+            sx={{
+              backgroundColor: "#22c55e",
+              "&:hover": {
+                backgroundColor: "#16a34a",
+              },
+              "&:disabled": {
+                backgroundColor: "#666",
+              },
+            }}
+          >
+            {addingNote ? <CircularProgress size={20} /> : "Dodaj napomenu"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   )
 }

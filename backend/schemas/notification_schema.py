@@ -8,7 +8,6 @@ class NotificationCreate(BaseModel):
     old_status: Optional[str] = None
     new_status: Optional[str] = None
     changed_by: str
-    message: Optional[str] = None
 
 class NotificationRead(BaseModel):
     id: int
@@ -17,7 +16,6 @@ class NotificationRead(BaseModel):
     old_status: Optional[str] = None
     new_status: Optional[str] = None
     changed_by: str
-    message: Optional[str] = None
     is_read: bool
     created_at: datetime
     issue_title: Optional[str] = None

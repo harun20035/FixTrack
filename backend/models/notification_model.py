@@ -9,7 +9,6 @@ class Notification(SQLModel, table=True):
     old_status: Optional[str] = Field(default=None)
     new_status: Optional[str] = Field(default=None)
     changed_by: str
-    message: Optional[str] = Field(default=None)
     is_read: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

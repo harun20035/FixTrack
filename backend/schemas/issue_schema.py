@@ -89,4 +89,10 @@ class HistoryFilterParams(BaseModel):
     date_to: datetime | None = None
     sort_by: str | None = None
     page: int = 1
-    page_size: int = 10 
+    page_size: int = 10
+
+class ContractorAssignmentRequest(BaseModel):
+    contractor_id: int
+
+class IssueNoteRequest(BaseModel):
+    note: str 

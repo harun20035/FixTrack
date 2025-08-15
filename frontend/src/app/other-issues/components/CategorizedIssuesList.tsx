@@ -66,19 +66,29 @@ export function CategorizedIssuesList({ filters }: CategorizedIssuesListProps) {
         setLoading(true)
         setError(null)
         
-        // Dohvati sve issue-e koji nisu "Primljeno"
-        const response = await authFetch("http://localhost:8000/api/manager/all-issues-complete?status=all")
+        console.log("DEBUG: Starting to fetch issues...")
+        console.log("DEBUG: Current auth token:", localStorage.getItem("auth_token"))
+        console.log("DEBUG: Token exists:", !!localStorage.getItem("auth_token"))
+        console.log("DEBUG: Token length:", localStorage.getItem("auth_token")?.length)
+        
+        // Dohvati issue-e koji nisu "Primljeno" koristeći novi endpoint
+        console.log("DEBUG: Calling /api/manager/other-issues endpoint")
+        const response = await authFetch("http://localhost:8000/api/manager/other-issues")
+        console.log("DEBUG: Response status:", response.status)
+        console.log("DEBUG: Response headers:", response.headers)
+        
         if (!response.ok) {
-          throw new Error("Greška pri dohvatanju podataka")
+          const errorText = await response.text()
+          console.log("DEBUG: Error response:", errorText)
+          throw new Error(`Greška pri dohvatanju podataka: ${response.status} ${errorText}`)
         }
         
-        const allIssues: Issue[] = await response.json()
-        
-        // Filtriraj samo issue-e koji nisu "Primljeno"
-        const filteredIssues = allIssues.filter(issue => issue.status !== "Primljeno")
-        
-        setIssues(filteredIssues)
+        const otherIssues: Issue[] = await response.json()
+        console.log("DEBUG: Received issues:", otherIssues)
+        console.log("DEBUG: Number of issues:", otherIssues.length)
+        setIssues(otherIssues)
       } catch (err) {
+        console.error("DEBUG: Error in fetchIssues:", err)
         setError(err instanceof Error ? err.message : "Nepoznata greška")
       } finally {
         setLoading(false)

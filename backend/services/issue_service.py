@@ -13,6 +13,7 @@ from typing import List
 import os
 import shutil
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from services import notification_service
 from schemas.notification_schema import NotificationCreate
 
@@ -181,52 +182,63 @@ def get_all_issues_for_manager_dict(session: Session, user_id: int, filters: dic
     
     return result
 
-def get_available_contractors(session: Session, user_id: int):
-    # Provjera da li je korisnik upravnik
-    user = session.get(User, user_id)
-    if not user or user.role_id != 2:
-        raise HTTPException(status_code=403, detail="Nemate dozvolu za pristup.")
-    
-    # Dohvati sve korisnike sa ulogom izvođača (pretpostavljam da je role_id=3)
-    contractors = session.exec(select(User).where(User.role_id == 3)).all()
-    
-    contractor_list = []
-    for contractor in contractors:
-        # Provjeri koliko aktivnih zadataka ima izvođač
-        active_assignments = session.exec(
-            select(Assignment).where(
-                Assignment.contractor_id == contractor.id,
-                Assignment.status.in_(["Primljeno", "Na lokaciji", "Popravka u toku"])
-            )
-        ).all()
-        
-        contractor_list.append({
-            "id": contractor.id,
-            "full_name": contractor.full_name,
-            "email": contractor.email,
-            "phone": contractor.phone,
-            "active_assignments_count": len(active_assignments),
-            "is_available": len(active_assignments) < 5  # Pretpostavljam da je izvođač slobodan ako ima manje od 5 aktivnih zadataka
-        })
-    
-    return contractor_list
+def get_available_contractors(session, user_id):
+    contractor_role = session.execute(
+        select(Role).where(Role.name.ilike("%izvođač%"))
+    ).first()
+    if contractor_role:
+        contractor_role = contractor_role[0]  # Pristupi Role objektu
+        contractors = session.execute(
+            select(User).where(User.role_id == contractor_role.id)
+        ).scalars().all()
+        # Pretvori svaki User u dict
+        contractor_dicts = []
+        for contractor in contractors:
+            # Provjeri koliko aktivnih zadataka ima izvođač
+            active_assignments = session.execute(
+                select(Assignment).where(
+                    Assignment.contractor_id == contractor.id,
+                    Assignment.status.in_(["Primljeno", "Na lokaciji", "Popravka u toku"])
+                )
+            ).scalars().all()
+            
+            contractor_dicts.append({
+                "id": contractor.id,
+                "full_name": contractor.full_name,
+                "email": contractor.email,
+                "phone": contractor.phone,
+                "address": contractor.address,
+                "role_id": contractor.role_id,
+                "created_at": contractor.created_at,
+                "active_assignments_count": len(active_assignments),
+                "is_available": len(active_assignments) < 5  # Izvođač je slobodan ako ima manje od 5 aktivnih zadataka
+            })
+        return contractor_dicts
+    return []
 
 def assign_contractor_to_issue(session: Session, user_id: int, issue_id: int, contractor_id: int):
+    print(f"DEBUG: assign_contractor_to_issue called with issue_id={issue_id}, contractor_id={contractor_id}")
+    
     # Provjera da li je korisnik upravnik
     user = session.get(User, user_id)
     if not user:
+        print(f"DEBUG: User {user_id} not found")
         raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
     
     role = session.get(Role, user.role_id)
     if not role or "upravnik" not in role.name.lower():
+        print(f"DEBUG: User {user_id} is not manager, role: {role.name if role else 'None'}")
         raise HTTPException(status_code=403, detail="Samo upravnici mogu dodijeliti izvođače.")
     
     # Provjera da li issue postoji i da li je u statusu "Primljeno"
     issue = session.get(Issue, issue_id)
     if not issue:
+        print(f"DEBUG: Issue {issue_id} not found")
         raise HTTPException(status_code=404, detail="Prijava nije pronađena.")
     
+    print(f"DEBUG: Issue {issue_id} status: {issue.status}")
     if issue.status != "Primljeno":
+        print(f"DEBUG: Issue {issue_id} has wrong status: {issue.status}, expected: Primljeno")
         raise HTTPException(status_code=400, detail="Samo prijave sa statusom 'Primljeno' mogu biti dodijeljene izvođaču.")
     
     # Provjera da li izvođač postoji
@@ -391,7 +403,10 @@ def create_admin_note(session: Session, user_id: int, tenant_id: int, note: str)
         raise HTTPException(status_code=404, detail="Stanar nije pronađen.")
     
     tenant_role = session.get(Role, tenant.role_id)
-    if not tenant_role or "stanar" not in tenant_role.name.lower():
+    if not tenant_role:
+        raise HTTPException(status_code=400, detail="Stanar nema validnu ulogu.")
+    
+    if "stanar" not in tenant_role.name.lower():
         raise HTTPException(status_code=400, detail="Odabrani korisnik nije stanar.")
     
     # Kreiraj napomenu
@@ -410,8 +425,7 @@ def create_admin_note(session: Session, user_id: int, tenant_id: int, note: str)
         issue_id=None,  # Nema vezane prijave
         old_status=None,
         new_status=None,
-        changed_by="Upravnik",
-        message=f"Upravnik vam je poslao napomenu: {note}"
+        changed_by="Upravnik"
     ))
     
     return {
@@ -419,4 +433,100 @@ def create_admin_note(session: Session, user_id: int, tenant_id: int, note: str)
         "note_id": admin_note.id,
         "tenant_id": tenant_id,
         "admin_id": user_id
-    } 
+    }
+
+def get_other_issues_for_manager(session: Session, user_id: int, filters: dict, page: int = 1, page_size: int = 10):
+    """Dohvaća sve issue-e koji NISU 'Primljeno' za upravnike"""
+    print(f"DEBUG: get_other_issues_for_manager called with user_id={user_id}, filters={filters}")
+    
+    # Provjera da li je korisnik upravnik
+    user = session.get(User, user_id)
+    if not user:
+        print(f"DEBUG: User {user_id} not found")
+        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
+    
+    role = session.get(Role, user.role_id)
+    if not role or "upravnik" not in role.name.lower():
+        print(f"DEBUG: User {user_id} is not manager, role: {role.name if role else 'None'}")
+        raise HTTPException(status_code=403, detail="Samo upravnici mogu pristupiti ovim podacima.")
+    
+    print(f"DEBUG: User {user_id} is manager, proceeding...")
+    
+    # Dohvati sve issue-e koji NISU 'Primljeno'
+    print(f"DEBUG: Calling get_issues_for_manager_complete with filters: {filters}, page: {page}, page_size: {page_size}")
+    print(f"DEBUG: About to call repository function...")
+    issues = get_issues_for_manager_complete(session, filters, page, page_size)
+    print(f"DEBUG: get_issues_for_manager_complete returned {len(issues)} issues")
+
+    result = []
+    for issue in issues:
+        issue_dict = {
+            "id": issue.id,
+            "title": issue.title,
+            "description": issue.description,
+            "location": issue.location,
+            "status": issue.status,
+            "created_at": issue.created_at,
+            "tenant": {
+                "id": issue.tenant.id if issue.tenant else None,
+                "full_name": issue.tenant.full_name if issue.tenant else None,
+                "email": issue.tenant.email if issue.tenant else None,
+                "phone": issue.tenant.phone if issue.tenant else None,
+                "address": issue.tenant.address if issue.tenant else None
+            } if issue.tenant else None,
+            "category": {
+                "id": issue.category.id if issue.category else None,
+                "name": issue.category.name if issue.category else None
+            } if issue.category else None,
+            "images": [
+                {
+                    "id": img.id,
+                    "image_url": img.image_url
+                } for img in issue.images
+            ] if issue.images else []
+        }
+        result.append(issue_dict)
+
+    return result
+
+def create_issue_note(session: Session, user_id: int, issue_id: int, note: str):
+    """Kreira napomenu vezanu za određeni issue"""
+    # Provjera da li je korisnik upravnik
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
+    
+    role = session.get(Role, user.role_id)
+    if not role or "upravnik" not in role.name.lower():
+        raise HTTPException(status_code=403, detail="Samo upravnici mogu dodavati napomene.")
+    
+    # Provjera da li issue postoji
+    issue = session.get(Issue, issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail="Prijava nije pronađena.")
+    
+    # Kreiraj napomenu vezanu za issue
+    admin_note = AdminNote(
+        admin_id=user_id,
+        tenant_id=issue.tenant_id,
+        note=note
+    )
+    session.add(admin_note)
+    session.commit()
+    session.refresh(admin_note)
+    
+    # Kreiraj notifikaciju za stanara
+    notification_service.create_new_notification(session, NotificationCreate(
+        user_id=issue.tenant_id,
+        issue_id=issue_id,
+        old_status=issue.status,
+        new_status=issue.status,
+        changed_by="Upravnik"
+    ))
+    
+    return {
+        "message": "Napomena je uspješno dodana.",
+        "note_id": admin_note.id,
+        "issue_id": issue_id,
+        "admin_id": user_id
+    }
