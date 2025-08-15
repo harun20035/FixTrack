@@ -110,12 +110,15 @@ export default function IssuesList({ filters }: IssuesListProps) {
     
     try {
       setLoadingContractors(true)
+      // Popravljam endpoint - treba da bude /api/manager/contractors
       const contractorsResponse = await authFetch('http://localhost:8000/api/manager/contractors')
       if (!contractorsResponse.ok) {
-        throw new Error('Greška prilikom dohvata izvođača')
+        const errorData = await contractorsResponse.json().catch(() => ({}))
+        throw new Error(errorData.detail || `Greška prilikom dohvata izvođača: ${contractorsResponse.status}`)
       }
       
       const contractorsData = await contractorsResponse.json()
+      console.log('Contractors data:', contractorsData) // Debug log
       setContractors(contractorsData)
     } catch (err) {
       console.error('Error fetching contractors:', err)

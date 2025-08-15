@@ -117,7 +117,7 @@ export default function AllIssuesLayout() {
               Pregled svih prijava kvarova koje čekaju dodjelu izvođača
             </Typography>
             <Typography variant="body2" sx={{ color: "#666" }}>
-              Kao upravnik, možete vidjeti sve prijave sa statusom "Primljeno" i dodijeliti izvođače
+              Kao upravnik, možete vidjeti sve prijave sa statusom Primljeno i dodijeliti izvođače
             </Typography>
           </Box>
 
