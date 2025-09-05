@@ -9,6 +9,7 @@ import BuildIcon from "@mui/icons-material/Build"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import AccessTimeIcon from "@mui/icons-material/AccessTime"
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney"
+import { ContractorStats } from "../../../utils/dashboardApi"
 
 const StatsCard = styled(Card)(({ theme }) => ({
   background: "#2a2a2a",
@@ -20,41 +21,45 @@ const StatsCard = styled(Card)(({ theme }) => ({
   },
 }))
 
-export default function ContractorStatsCards() {
-  const stats = [
+interface ContractorStatsCardsProps {
+  stats: ContractorStats
+}
+
+export default function ContractorStatsCards({ stats }: ContractorStatsCardsProps) {
+  const statsData = [
     {
       icon: <AssignmentIcon sx={{ fontSize: 40, color: "#42a5f5", mb: 2 }} />,
-      value: "8",
+      value: stats.assigned_issues.toString(),
       label: "Dodijeljene Prijave",
       color: "#42a5f5",
     },
     {
       icon: <LocationOnIcon sx={{ fontSize: 40, color: "#ff9800", mb: 2 }} />,
-      value: "3",
+      value: stats.on_location.toString(),
       label: "Na Lokaciji",
       color: "#ff9800",
     },
     {
       icon: <BuildIcon sx={{ fontSize: 40, color: "#f44336", mb: 2 }} />,
-      value: "2",
+      value: stats.in_progress.toString(),
       label: "U Toku",
       color: "#f44336",
     },
     {
       icon: <CheckCircleIcon sx={{ fontSize: 40, color: "#4caf50", mb: 2 }} />,
-      value: "15",
+      value: stats.completed_this_month.toString(),
       label: "Završeno (Mjesec)",
       color: "#4caf50",
     },
     {
       icon: <AccessTimeIcon sx={{ fontSize: 40, color: "#9c27b0", mb: 2 }} />,
-      value: "2.1",
+      value: stats.average_resolution_time.toString(),
       label: "Prosječno Vrijeme (dani)",
       color: "#9c27b0",
     },
     {
       icon: <AttachMoneyIcon sx={{ fontSize: 40, color: "#ffc107", mb: 2 }} />,
-      value: "2,450",
+      value: stats.monthly_earnings.toLocaleString(),
       label: "Zarada (KM)",
       color: "#ffc107",
     },
@@ -74,7 +79,7 @@ export default function ContractorStatsCards() {
         mb: 4,
       }}
     >
-      {stats.map((stat, index) => (
+      {statsData.map((stat, index) => (
         <StatsCard key={index}>
           <CardContent sx={{ textAlign: "center", p: 3 }}>
             {stat.icon}

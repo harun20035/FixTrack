@@ -7,19 +7,11 @@ import Card from "@mui/material/Card"
 import CardContent from "@mui/material/CardContent"
 import Typography from "@mui/material/Typography"
 import Chip from "@mui/material/Chip"
-import Button from "@mui/material/Button"
-import IconButton from "@mui/material/IconButton"
-import Menu from "@mui/material/Menu"
-import MenuItem from "@mui/material/MenuItem"
-import { useState } from "react"
 import { styled } from "@mui/material/styles"
 import LocationOnIcon from "@mui/icons-material/LocationOn"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney"
-import MoreVertIcon from "@mui/icons-material/MoreVert"
-import CheckCircleIcon from "@mui/icons-material/CheckCircle"
-import BuildIcon from "@mui/icons-material/Build"
-import CancelIcon from "@mui/icons-material/Cancel"
+import { ContractorIssue } from "../../../utils/dashboardApi"
 
 const IssueCard = styled(Card)(({ theme }) => ({
   background: "#1e1e1e",
@@ -30,69 +22,18 @@ const IssueCard = styled(Card)(({ theme }) => ({
   },
 }))
 
-interface AssignedIssue {
-  id: number
-  title: string
-  description: string
-  location: string
-  status: string
-  category: string
-  assignedAt: string
-  estimatedCost?: number
-  plannedDate?: string
-  priority: string
+interface AssignedIssuesProps {
+  assignedIssues: ContractorIssue[]
 }
 
-export default function AssignedIssues() {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const [selectedIssue, setSelectedIssue] = useState<number | null>(null)
+export default function AssignedIssues({ assignedIssues }: AssignedIssuesProps) {
 
-  // Mock data
-  const assignedIssues: AssignedIssue[] = [
-    {
-      id: 1,
-      title: "Kvar na slavini u kupatilu",
-      description: "Slavina u kupatilu curi i ne može se zatvoriti potpuno",
-      location: "Stan 15, kupatilo",
-      status: "Primljeno",
-      category: "Vodoinstalacije",
-      assignedAt: "2025-01-25T10:30:00Z",
-      priority: "Visok",
-    },
-    {
-      id: 2,
-      title: "Problem sa grijanjem",
-      description: "Radijatori u dnevnoj sobi ne griju dovoljno",
-      location: "Stan 22, dnevna soba",
-      status: "Na lokaciji",
-      category: "Grijanje",
-      assignedAt: "2025-01-24T14:20:00Z",
-      estimatedCost: 150,
-      plannedDate: "2025-01-26",
-      priority: "Srednji",
-    },
-    {
-      id: 3,
-      title: "Prekidač u hodniku ne radi",
-      description: "Prekidač za svjetlo u hodniku drugog sprata ne funkcioniše",
-      location: "Hodnik 2. sprat",
-      status: "Popravka u toku",
-      category: "Elektroinstalacije",
-      assignedAt: "2025-01-23T16:45:00Z",
-      estimatedCost: 80,
-      plannedDate: "2025-01-25",
-      priority: "Nizak",
-    },
-  ]
-
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, issueId: number) => {
-    setAnchorEl(event.currentTarget)
-    setSelectedIssue(issueId)
-  }
-
-  const handleMenuClose = () => {
-    setAnchorEl(null)
-    setSelectedIssue(null)
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("bs-BA", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
   }
 
   const getStatusColor = (status: string) => {
@@ -123,14 +64,6 @@ export default function AssignedIssues() {
       default:
         return "#42a5f5"
     }
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("bs-BA", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    })
   }
 
   return (
@@ -165,9 +98,6 @@ export default function AssignedIssues() {
                   <Chip label={issue.category} size="small" variant="outlined" sx={{ borderColor: "#42a5f5" }} />
                 </Box>
               </Box>
-              <IconButton onClick={(e) => handleMenuOpen(e, issue.id)} sx={{ color: "text.secondary" }}>
-                <MoreVertIcon />
-              </IconButton>
             </Box>
 
             {/* Description */}
@@ -186,98 +116,31 @@ export default function AssignedIssues() {
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <CalendarTodayIcon sx={{ fontSize: 16, color: "#42a5f5" }} />
                 <Typography variant="body2" color="text.secondary">
-                  Dodijeljeno: {formatDate(issue.assignedAt)}
+                  Dodijeljeno: {formatDate(issue.assigned_at)}
                 </Typography>
               </Box>
-              {issue.estimatedCost && (
+              {issue.estimated_cost && (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <AttachMoneyIcon sx={{ fontSize: 16, color: "#42a5f5" }} />
                   <Typography variant="body2" color="text.secondary">
-                    Procjena: {issue.estimatedCost} KM
+                    Procjena: {issue.estimated_cost} KM
                   </Typography>
                 </Box>
               )}
-              {issue.plannedDate && (
+              {issue.planned_date && (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <CalendarTodayIcon sx={{ fontSize: 16, color: "#42a5f5" }} />
                   <Typography variant="body2" color="text.secondary">
-                    Planirani datum: {formatDate(issue.plannedDate)}
+                    Planirani datum: {formatDate(issue.planned_date)}
                   </Typography>
                 </Box>
               )}
             </Box>
 
-            {/* Quick Actions */}
-            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-              {issue.status === "Primljeno" && (
-                <Button
-                  size="small"
-                  variant="contained"
-                  startIcon={<LocationOnIcon />}
-                  sx={{
-                    background: "linear-gradient(45deg, #ff9800 30%, #f57c00 90%)",
-                    "&:hover": {
-                      background: "linear-gradient(45deg, #f57c00 30%, #ff9800 90%)",
-                    },
-                  }}
-                >
-                  Na Lokaciji
-                </Button>
-              )}
-              {issue.status === "Na lokaciji" && (
-                <Button
-                  size="small"
-                  variant="contained"
-                  startIcon={<BuildIcon />}
-                  sx={{
-                    background: "linear-gradient(45deg, #42a5f5 30%, #1976d2 90%)",
-                    "&:hover": {
-                      background: "linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)",
-                    },
-                  }}
-                >
-                  Počni Popravku
-                </Button>
-              )}
-              {(issue.status === "Popravka u toku" || issue.status === "Čeka dijelove") && (
-                <Button
-                  size="small"
-                  variant="contained"
-                  startIcon={<CheckCircleIcon />}
-                  sx={{
-                    background: "linear-gradient(45deg, #4caf50 30%, #388e3c 90%)",
-                    "&:hover": {
-                      background: "linear-gradient(45deg, #388e3c 30%, #4caf50 90%)",
-                    },
-                  }}
-                >
-                  Završi
-                </Button>
-              )}
-            </Box>
           </CardContent>
         </IssueCard>
       ))}
 
-      {/* Context Menu */}
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-        <MenuItem onClick={handleMenuClose}>
-          <BuildIcon sx={{ mr: 1 }} />
-          Dodaj Bilješku
-        </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
-          <AttachMoneyIcon sx={{ mr: 1 }} />
-          Ažuriraj Procjenu
-        </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
-          <CalendarTodayIcon sx={{ mr: 1 }} />
-          Promijeni Datum
-        </MenuItem>
-        <MenuItem onClick={handleMenuClose} sx={{ color: "#f44336" }}>
-          <CancelIcon sx={{ mr: 1 }} />
-          Odbij Zadatak
-        </MenuItem>
-      </Menu>
     </Box>
   )
 }

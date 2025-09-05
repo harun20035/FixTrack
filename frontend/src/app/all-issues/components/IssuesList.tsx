@@ -64,6 +64,12 @@ export default function IssuesList({ filters }: IssuesListProps) {
         if (filters.dateTo) {
           params.append('date_to', filters.dateTo)
         }
+        if (filters.address) {
+          params.append('address', filters.address)
+        }
+        if (filters.contractor) {
+          params.append('contractor', filters.contractor)
+        }
         params.append('sort_by', 'created_at_desc')
         
         const response = await authFetch(`http://localhost:8000/api/manager/all-issues?${params}`)

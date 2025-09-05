@@ -14,6 +14,7 @@ export interface FormErrors {
   experienceFile?: string
   acceptTerms?: string
   acceptRoleChange?: string
+  general?: string
 }
 
 export interface ManagerApplication {

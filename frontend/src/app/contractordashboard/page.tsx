@@ -1,14 +1,75 @@
 "use client"
+import { useEffect, useState } from "react"
 import Box from "@mui/material/Box"
 import Container from "@mui/material/Container"
 import Typography from "@mui/material/Typography"
+import CircularProgress from "@mui/material/CircularProgress"
+import Alert from "@mui/material/Alert"
 import ContractorDashboardLayout from "./components/ContractorDashboardLayout"
 import ContractorQuickActions from "./components/ContractorQuickActions"
 import ContractorStatsCards from "./components/ContractorStatsCards"
 import AssignedIssues from "./components/AssignedIssues"
 import RecentActivity from "./components/RecentActivity"
+import { getContractorDashboard, ContractorDashboardData } from "../../utils/dashboardApi"
 
 export default function ContractorDashboard() {
+  const [dashboardData, setDashboardData] = useState<ContractorDashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const data = await getContractorDashboard()
+        setDashboardData(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Greška pri dohvatanju podataka")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDashboardData()
+  }, [])
+
+  if (loading) {
+    return (
+      <ContractorDashboardLayout>
+        <Container maxWidth="xl" sx={{ py: 4 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
+            <CircularProgress />
+          </Box>
+        </Container>
+      </ContractorDashboardLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <ContractorDashboardLayout>
+        <Container maxWidth="xl" sx={{ py: 4 }}>
+          <Alert severity="error" sx={{ mb: 4 }}>
+            {error}
+          </Alert>
+        </Container>
+      </ContractorDashboardLayout>
+    )
+  }
+
+  if (!dashboardData) {
+    return (
+      <ContractorDashboardLayout>
+        <Container maxWidth="xl" sx={{ py: 4 }}>
+          <Alert severity="warning" sx={{ mb: 4 }}>
+            Nema dostupnih podataka
+          </Alert>
+        </Container>
+      </ContractorDashboardLayout>
+    )
+  }
+
   return (
     <ContractorDashboardLayout>
       <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -26,7 +87,7 @@ export default function ContractorDashboard() {
         <ContractorQuickActions />
 
         {/* Stats Cards */}
-        <ContractorStatsCards />
+        <ContractorStatsCards stats={dashboardData.stats} />
 
         {/* Main Content Grid */}
         <Box
@@ -39,8 +100,8 @@ export default function ContractorDashboard() {
             gap: 4,
           }}
         >
-          <AssignedIssues />
-          <RecentActivity />
+          <AssignedIssues assignedIssues={dashboardData.assigned_issues} />
+          <RecentActivity recentActivities={dashboardData.recent_activities} />
         </Box>
       </Container>
     </ContractorDashboardLayout>

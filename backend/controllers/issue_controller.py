@@ -173,6 +173,8 @@ def get_other_issues_for_manager(
     search: str = Query(None),
     date_from: str = Query(None),
     date_to: str = Query(None),
+    address: str = Query(None),
+    contractor: str = Query(None),
     sort_by: str = Query("created_at_desc"),
     page: int = Query(1),
     page_size: int = Query(10),
@@ -183,6 +185,8 @@ def get_other_issues_for_manager(
         "search": search,
         "date_from": date_from,
         "date_to": date_to,
+        "address": address,
+        "contractor": contractor,
         "sort_by": sort_by
     }
     issues = issue_service.get_other_issues_for_manager(session, user_id, filters, page, page_size)
@@ -269,8 +273,16 @@ def create_issue_note(
     issue_id: int,
     request: Request,
     session: Session = Depends(get_session),
-    note: str = Body(...),
+    note_data: dict = Body(...),
 ):
     user_id = get_current_user_id(request)
-    result = issue_service.create_issue_note(session, user_id, issue_id, note)
-    return result 
+    note = note_data.get("note", "")
+    
+    if not note:
+        raise HTTPException(status_code=400, detail="Napomena je obavezna.")
+    
+    try:
+        result = issue_service.create_issue_note(session, user_id, issue_id, note)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Greška pri dodavanju napomene: {str(e)}") 

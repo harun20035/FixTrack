@@ -7,6 +7,7 @@ import BuildIcon from "@mui/icons-material/Build"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import PendingIcon from "@mui/icons-material/Pending"
 import WarningIcon from "@mui/icons-material/Warning"
+import { TenantStats } from "../../../utils/dashboardApi"
 
 const StatsCard = styled(Card)(() => ({
   background: "#2a2a2a",
@@ -18,29 +19,33 @@ const StatsCard = styled(Card)(() => ({
   },
 }))
 
-export default function StatsCards() {
-  const stats = [
+interface StatsCardsProps {
+  stats: TenantStats
+}
+
+export default function StatsCards({ stats }: StatsCardsProps) {
+  const statsData = [
     {
       icon: <BuildIcon sx={{ fontSize: 40, color: "#42a5f5", mb: 2 }} />,
-      value: "12",
+      value: stats.total_issues.toString(),
       label: "Ukupno Prijava",
       color: "#42a5f5",
     },
     {
       icon: <PendingIcon sx={{ fontSize: 40, color: "#ff9800", mb: 2 }} />,
-      value: "3",
+      value: stats.in_progress.toString(),
       label: "U Toku",
       color: "#ff9800",
     },
     {
       icon: <CheckCircleIcon sx={{ fontSize: 40, color: "#4caf50", mb: 2 }} />,
-      value: "8",
+      value: stats.completed.toString(),
       label: "Završeno",
       color: "#4caf50",
     },
     {
       icon: <WarningIcon sx={{ fontSize: 40, color: "#f44336", mb: 2 }} />,
-      value: "1",
+      value: stats.urgent.toString(),
       label: "Hitno",
       color: "#f44336",
     },
@@ -59,7 +64,7 @@ export default function StatsCards() {
         mb: 4,
       }}
     >
-      {stats.map((stat, index) => (
+      {statsData.map((stat, index) => (
         <StatsCard key={index}>
           <CardContent sx={{ textAlign: "center", p: 3 }}>
             {stat.icon}

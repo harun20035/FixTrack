@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type React from "react"
 
 import Box from "@mui/material/Box"
@@ -17,6 +17,8 @@ import SendIcon from "@mui/icons-material/Send"
 import WorkIcon from "@mui/icons-material/Work"
 import FileUpload from "./FileUpload"
 import type { ContractorFormData, FormErrors } from "../types"
+import { submitContractorApplication, getApplicationStatus } from "../../../utils/applicationApi"
+import { useRouter } from "next/navigation"
 
 const FormCard = styled(Card)(({ theme }) => ({
   background: "#1e1e1e",
@@ -25,6 +27,7 @@ const FormCard = styled(Card)(({ theme }) => ({
 }))
 
 export default function ContractorApplicationForm() {
+  const router = useRouter()
   const [formData, setFormData] = useState<ContractorFormData>({
     motivationLetter: "",
     reasonForBecomingContractor: "",
@@ -35,6 +38,33 @@ export default function ContractorApplicationForm() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoading, setIsLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
+  const [hasPendingApplication, setHasPendingApplication] = useState(false)
+
+  // Proveri status aplikacije kada se komponenta učita
+  useEffect(() => {
+    // Proveri da li je korisnik prijavljen
+    const token = localStorage.getItem('auth_token')
+    console.log("Component mounted - Token check:", token ? "EXISTS" : "NOT FOUND")
+    console.log("Component mounted - All localStorage keys:", Object.keys(localStorage))
+    
+    const checkApplicationStatus = async () => {
+      try {
+        console.log("Checking application status...")
+        const status = await getApplicationStatus()
+        console.log("Application status received:", status)
+        if (status.has_pending_application && status.application_type === "contractor") {
+          setHasPendingApplication(true)
+        }
+      } catch (error) {
+        console.error("Error checking application status:", error)
+        // Ne blokiraj formu ako status check ne radi
+        setHasPendingApplication(false)
+      }
+    }
+    
+    // Privremeno isključeno da testiramo formu
+    // checkApplicationStatus()
+  }, [])
 
   const handleInputChange = (field: keyof ContractorFormData) => (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = field === "acceptTerms" ? event.target.checked : event.target.value
@@ -107,21 +137,43 @@ export default function ContractorApplicationForm() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
+    console.log("Form submitted!")
 
     if (!validateForm()) {
+      console.log("Form validation failed")
       return
     }
 
+    console.log("Form validation passed, submitting...")
     setIsLoading(true)
     setSuccessMessage("")
 
     try {
-      // Simulacija API poziva
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Proveri da li je korisnik prijavljen
+      const token = localStorage.getItem('auth_token')
+      console.log("Token from localStorage:", token ? "EXISTS" : "NOT FOUND")
+      console.log("All localStorage keys:", Object.keys(localStorage))
+      
+      if (!token) {
+        throw new Error("Niste prijavljeni. Molimo prijavite se ponovo.")
+      }
+      console.log("User is logged in, token exists")
+      console.log("Calling submitContractorApplication with data:", {
+        motivationLetter: formData.motivationLetter,
+        reasonForBecomingContractor: formData.reasonForBecomingContractor,
+        experienceFile: formData.experienceFile,
+        acceptTerms: formData.acceptTerms
+      })
 
-      setSuccessMessage(
-        "Vaša prijava je uspješno poslana! Naš tim će pregledati vašu aplikaciju i kontaktirati vas u roku od 3-5 radnih dana.",
-      )
+      const response = await submitContractorApplication({
+        motivationLetter: formData.motivationLetter,
+        reasonForBecomingContractor: formData.reasonForBecomingContractor,
+        experienceFile: formData.experienceFile || undefined,
+        acceptTerms: formData.acceptTerms
+      })
+
+      console.log("Response received:", response)
+      setSuccessMessage(response.message)
 
       // Reset form after successful submission
       setFormData({
@@ -130,8 +182,17 @@ export default function ContractorApplicationForm() {
         experienceFile: null,
         acceptTerms: false,
       })
-    } catch (error) {
+
+      // Redirect na dashboard nakon 3 sekunde
+      setTimeout(() => {
+        router.push(response.redirect_url || "/contractordashboard")
+      }, 3000)
+
+    } catch (error: any) {
       console.error("Error submitting contractor application:", error)
+      setErrors({ 
+        general: error.message || "Greška pri slanju aplikacije. Molimo pokušajte ponovo." 
+      })
     } finally {
       setIsLoading(false)
     }
@@ -152,13 +213,41 @@ export default function ContractorApplicationForm() {
           pouzdane i kvalifikovane izvođače koji mogu pomoći u rješavanju kvarova u stambenim objektima.
         </Typography>
 
+        {hasPendingApplication && (
+          <Alert severity="warning" sx={{ mb: 3, backgroundColor: "rgba(255, 152, 0, 0.1)" }}>
+            Već imate pending aplikaciju za izvođača. Molimo sačekajte da se trenutna aplikacija obradi.
+          </Alert>
+        )}
+
+        {!localStorage.getItem('auth_token') && (
+          <Alert severity="error" sx={{ mb: 3, backgroundColor: "rgba(244, 67, 54, 0.1)" }}>
+            Niste prijavljeni! Molimo prijavite se da biste mogli poslati aplikaciju.
+          </Alert>
+        )}
+
         {successMessage && (
           <Alert severity="success" sx={{ mb: 3, backgroundColor: "rgba(76, 175, 80, 0.1)" }}>
             {successMessage}
           </Alert>
         )}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {errors.general && (
+          <Alert severity="error" sx={{ mb: 3, backgroundColor: "rgba(244, 67, 54, 0.1)" }}>
+            {errors.general}
+          </Alert>
+        )}
+
+        <Box 
+          component="form" 
+          onSubmit={handleSubmit} 
+          sx={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: 4,
+            opacity: hasPendingApplication ? 0.6 : 1,
+            pointerEvents: hasPendingApplication ? "none" : "auto"
+          }}
+        >
           {/* Motivation Letter */}
           <Box>
             <Typography variant="h6" color="primary" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>

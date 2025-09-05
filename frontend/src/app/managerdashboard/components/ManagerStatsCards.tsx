@@ -9,6 +9,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import BuildIcon from "@mui/icons-material/Build"
 import AccessTimeIcon from "@mui/icons-material/AccessTime"
 import TrendingUpIcon from "@mui/icons-material/TrendingUp"
+import { ManagerStats } from "../../../utils/dashboardApi"
 
 const StatsCard = styled(Card)(({ theme }) => ({
   background: "#2a2a2a",
@@ -20,46 +21,50 @@ const StatsCard = styled(Card)(({ theme }) => ({
   },
 }))
 
-export default function ManagerStatsCards() {
-  const stats = [
+interface ManagerStatsCardsProps {
+  stats: ManagerStats
+}
+
+export default function ManagerStatsCards({ stats }: ManagerStatsCardsProps) {
+  const statsData = [
     {
       icon: <ListAltIcon sx={{ fontSize: 40, color: "#42a5f5", mb: 2 }} />,
-      value: "47",
+      value: stats.total_issues.toString(),
       label: "Ukupno Prijava",
       subtitle: "Ovaj mjesec",
       color: "#42a5f5",
     },
     {
       icon: <PendingIcon sx={{ fontSize: 40, color: "#ff9800", mb: 2 }} />,
-      value: "12",
+      value: stats.pending_assignment.toString(),
       label: "Na Čekanju",
       subtitle: "Potrebna dodjela",
       color: "#ff9800",
     },
     {
       icon: <BuildIcon sx={{ fontSize: 40, color: "#f44336", mb: 2 }} />,
-      value: "8",
+      value: stats.in_progress.toString(),
       label: "U Toku",
       subtitle: "Aktivni zadaci",
       color: "#f44336",
     },
     {
       icon: <CheckCircleIcon sx={{ fontSize: 40, color: "#4caf50", mb: 2 }} />,
-      value: "27",
+      value: stats.completed_this_month.toString(),
       label: "Završeno",
       subtitle: "Ovaj mjesec",
       color: "#4caf50",
     },
     {
       icon: <AccessTimeIcon sx={{ fontSize: 40, color: "#9c27b0", mb: 2 }} />,
-      value: "2.8",
+      value: stats.average_resolution_time.toString(),
       label: "Prosječno Vrijeme",
       subtitle: "dana rješavanja",
       color: "#9c27b0",
     },
     {
       icon: <TrendingUpIcon sx={{ fontSize: 40, color: "#ffc107", mb: 2 }} />,
-      value: "94%",
+      value: `${stats.success_rate}%`,
       label: "Uspješnost",
       subtitle: "riješenih kvarova",
       color: "#ffc107",
@@ -80,7 +85,7 @@ export default function ManagerStatsCards() {
         mb: 4,
       }}
     >
-      {stats.map((stat, index) => (
+      {statsData.map((stat, index) => (
         <StatsCard key={index}>
           <CardContent sx={{ textAlign: "center", p: 3 }}>
             {stat.icon}

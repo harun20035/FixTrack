@@ -22,6 +22,8 @@ import FormControl from "@mui/material/FormControl"
 import InputLabel from "@mui/material/InputLabel"
 import Select from "@mui/material/Select"
 import TextField from "@mui/material/TextField"
+import Snackbar from "@mui/material/Snackbar"
+import Alert from "@mui/material/Alert"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
 import LocationOnIcon from "@mui/icons-material/LocationOn"
 import PhoneIcon from "@mui/icons-material/Phone"
@@ -46,6 +48,11 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
   const [showNoteModal, setShowNoteModal] = useState(false)
   const [noteText, setNoteText] = useState("")
   const [addingNote, setAddingNote] = useState(false)
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error" | "warning" | "info"
+  })
 
   const handleChangeStatus = async () => {
     if (selectedStatus === issue.status) {
@@ -106,18 +113,30 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
       })
 
       if (!response.ok) {
-        throw new Error("Greška pri dodavanju napomene")
+        const errorData = await response.json()
+        throw new Error(errorData.detail || "Greška pri dodavanju napomene")
       }
 
       setShowNoteModal(false)
       setNoteText("")
-      alert("Napomena je uspješno dodana!")
+      setSnackbar({
+        open: true,
+        message: "Napomena je uspješno dodana!",
+        severity: "success"
+      })
     } catch (error) {
-      console.error("Greška pri dodavanju napomene:", error)
-      alert("Greška pri dodavanju napomene")
+      setSnackbar({
+        open: true,
+        message: "Greška pri dodavanju napomene: " + error.message,
+        severity: "error"
+      })
     } finally {
       setAddingNote(false)
     }
+  }
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }))
   }
 
   const getStatusColor = (status: string) => {
@@ -497,6 +516,22 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   )
 }

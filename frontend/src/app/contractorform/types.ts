@@ -10,6 +10,7 @@ export interface FormErrors {
   reasonForBecomingContractor?: string
   experienceFile?: string
   acceptTerms?: string
+  general?: string
 }
 
 export interface ContractorApplication {

@@ -66,29 +66,39 @@ export function CategorizedIssuesList({ filters }: CategorizedIssuesListProps) {
         setLoading(true)
         setError(null)
         
-        console.log("DEBUG: Starting to fetch issues...")
-        console.log("DEBUG: Current auth token:", localStorage.getItem("auth_token"))
-        console.log("DEBUG: Token exists:", !!localStorage.getItem("auth_token"))
-        console.log("DEBUG: Token length:", localStorage.getItem("auth_token")?.length)
-        
         // Dohvati issue-e koji nisu "Primljeno" koristeći novi endpoint
-        console.log("DEBUG: Calling /api/manager/other-issues endpoint")
-        const response = await authFetch("http://localhost:8000/api/manager/other-issues")
-        console.log("DEBUG: Response status:", response.status)
-        console.log("DEBUG: Response headers:", response.headers)
+         
+         const params = new URLSearchParams()
+         if (filters.searchTerm) {
+           params.append('search', filters.searchTerm)
+         }
+         if (filters.category && filters.category !== 'all') {
+           params.append('category', filters.category)
+         }
+         if (filters.dateFrom) {
+           params.append('date_from', filters.dateFrom)
+         }
+         if (filters.dateTo) {
+           params.append('date_to', filters.dateTo)
+         }
+         if (filters.address) {
+           params.append('address', filters.address)
+         }
+         if (filters.contractor) {
+           params.append('contractor', filters.contractor)
+         }
+         params.append('sort_by', 'created_at_desc')
+         
+         const response = await authFetch(`http://localhost:8000/api/manager/other-issues?${params}`)
         
         if (!response.ok) {
           const errorText = await response.text()
-          console.log("DEBUG: Error response:", errorText)
           throw new Error(`Greška pri dohvatanju podataka: ${response.status} ${errorText}`)
         }
         
         const otherIssues: Issue[] = await response.json()
-        console.log("DEBUG: Received issues:", otherIssues)
-        console.log("DEBUG: Number of issues:", otherIssues.length)
         setIssues(otherIssues)
       } catch (err) {
-        console.error("DEBUG: Error in fetchIssues:", err)
         setError(err instanceof Error ? err.message : "Nepoznata greška")
       } finally {
         setLoading(false)
@@ -98,28 +108,13 @@ export function CategorizedIssuesList({ filters }: CategorizedIssuesListProps) {
     fetchIssues()
   }, [])
 
-  const filteredIssues = useMemo(() => {
-    return issues.filter((issue) => {
-      // Search filter
-      if (filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase()
-        const matchesSearch =
-          issue.title.toLowerCase().includes(searchLower) ||
-          (issue.description && issue.description.toLowerCase().includes(searchLower)) ||
-          (issue.tenant && issue.tenant.full_name.toLowerCase().includes(searchLower))
-        if (!matchesSearch) return false
-      }
+  // Refetch kada se filteri promene
+  useEffect(() => {
+    fetchIssues()
+  }, [filters])
 
-      // Date filters
-      if (filters.dateFrom && issue.created_at < filters.dateFrom) return false
-      if (filters.dateTo && issue.created_at > filters.dateTo) return false
-
-      // Category filter
-      if (filters.category !== "all" && issue.category && issue.category.name.toLowerCase() !== filters.category) return false
-
-      return true
-    })
-  }, [issues, filters])
+  // Koristimo server-side filtering, tako da ne treba client-side filtering
+  const filteredIssues = issues
 
   const issuesByStatus = useMemo(() => {
     const grouped: Record<string, Issue[]> = {}

@@ -16,6 +16,8 @@ export function OtherIssuesLayout() {
     dateTo: "",
     category: "all",
     priority: "all",
+    address: "",
+    contractor: "",
   })
 
   const handleFilterChange = (newFilters: FilterOptions) => {
@@ -29,6 +31,8 @@ export function OtherIssuesLayout() {
       dateTo: "",
       category: "all",
       priority: "all",
+      address: "",
+      contractor: "",
     })
   }
 

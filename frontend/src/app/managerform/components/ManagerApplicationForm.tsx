@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type React from "react"
 
 import Box from "@mui/material/Box"
@@ -18,6 +18,8 @@ import BusinessIcon from "@mui/icons-material/Business"
 import WarningIcon from "@mui/icons-material/Warning"
 import FileUpload from "./FileUpload"
 import type { ManagerFormData, FormErrors } from "../types"
+import { submitManagerApplication, getApplicationStatus } from "../../../utils/applicationApi"
+import { useRouter } from "next/navigation"
 
 const FormCard = styled(Card)(({ theme }) => ({
   background: "#1e1e1e",
@@ -34,6 +36,7 @@ const WarningBox = styled(Box)(({ theme }) => ({
 }))
 
 export default function ManagerApplicationForm() {
+  const router = useRouter()
   const [formData, setFormData] = useState<ManagerFormData>({
     motivationLetter: "",
     managementExperience: "",
@@ -46,6 +49,24 @@ export default function ManagerApplicationForm() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoading, setIsLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
+  const [hasPendingApplication, setHasPendingApplication] = useState(false)
+
+  // Proveri status aplikacije kada se komponenta učita
+  useEffect(() => {
+    const checkApplicationStatus = async () => {
+      try {
+        const status = await getApplicationStatus()
+        if (status.has_pending_application && status.application_type === "manager") {
+          setHasPendingApplication(true)
+        }
+      } catch (error) {
+        console.error("Error checking application status:", error)
+      }
+    }
+    
+    // Privremeno isključeno da testiramo formu
+    // checkApplicationStatus()
+  }, [])
 
   const handleInputChange = (field: keyof ManagerFormData) => (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = field === "acceptTerms" || field === "acceptRoleChange" ? event.target.checked : event.target.value
@@ -143,12 +164,16 @@ export default function ManagerApplicationForm() {
     setSuccessMessage("")
 
     try {
-      // Simulacija API poziva
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const response = await submitManagerApplication({
+        motivationLetter: formData.motivationLetter,
+        managementExperience: formData.managementExperience,
+        buildingManagementPlans: formData.buildingManagementPlans,
+        experienceFile: formData.experienceFile || undefined,
+        acceptTerms: formData.acceptTerms,
+        acceptRoleChange: formData.acceptRoleChange
+      })
 
-      setSuccessMessage(
-        "Vaša prijava je uspješno poslana! Naš tim će pregledati vašu aplikaciju i kontaktirati vas u roku od 3-5 radnih dana.",
-      )
+      setSuccessMessage(response.message)
 
       // Reset form after successful submission
       setFormData({
@@ -159,8 +184,17 @@ export default function ManagerApplicationForm() {
         acceptTerms: false,
         acceptRoleChange: false,
       })
-    } catch (error) {
+
+      // Redirect na dashboard nakon 3 sekunde
+      setTimeout(() => {
+        router.push(response.redirect_url || "/managerdashboard")
+      }, 3000)
+
+    } catch (error: any) {
       console.error("Error submitting manager application:", error)
+      setErrors({ 
+        general: error.message || "Greška pri slanju aplikacije. Molimo pokušajte ponovo." 
+      })
     } finally {
       setIsLoading(false)
     }
@@ -198,13 +232,35 @@ export default function ManagerApplicationForm() {
           </Box>
         </WarningBox>
 
+        {hasPendingApplication && (
+          <Alert severity="warning" sx={{ mb: 3, backgroundColor: "rgba(255, 152, 0, 0.1)" }}>
+            Već imate pending aplikaciju za upravnika. Molimo sačekajte da se trenutna aplikacija obradi.
+          </Alert>
+        )}
+
         {successMessage && (
           <Alert severity="success" sx={{ mb: 3, backgroundColor: "rgba(76, 175, 80, 0.1)" }}>
             {successMessage}
           </Alert>
         )}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {errors.general && (
+          <Alert severity="error" sx={{ mb: 3, backgroundColor: "rgba(244, 67, 54, 0.1)" }}>
+            {errors.general}
+          </Alert>
+        )}
+
+        <Box 
+          component="form" 
+          onSubmit={handleSubmit} 
+          sx={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: 4,
+            opacity: hasPendingApplication ? 0.6 : 1,
+            pointerEvents: hasPendingApplication ? "none" : "auto"
+          }}
+        >
           {/* Motivation Letter */}
           <Box>
             <Typography variant="h6" color="primary" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>

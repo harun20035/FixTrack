@@ -25,6 +25,8 @@ export function IssueFilters({ filters, onFilterChange }: IssueFiltersProps) {
       dateTo: "",
       category: "all",
       priority: "all",
+      address: "",
+      contractor: "",
     })
   }
 
@@ -193,6 +195,71 @@ export function IssueFilters({ filters, onFilterChange }: IssueFiltersProps) {
               <MenuItem value="nizak">Nizak</MenuItem>
             </Select>
           </FormControl>
+        </Grid>
+      </Grid>
+
+      {/* Second Row */}
+      <Grid container spacing={3} sx={{ mt: 1 }}>
+        {/* Address Search */}
+        <Grid item xs={12} md={4}>
+          <TextField
+            fullWidth
+            placeholder="Pretraži po adresi..."
+            value={filters.address}
+            onChange={(e) => onFilterChange({ ...filters, address: e.target.value })}
+            InputProps={{
+              startAdornment: <SearchIcon sx={{ color: "#42a5f5", mr: 1 }} />,
+              sx: {
+                backgroundColor: "#2a2a2a",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#444",
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#42a5f5",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#42a5f5",
+                },
+                "& input": {
+                  color: "#fff",
+                },
+                "& input::placeholder": {
+                  color: "#b0b0b0",
+                },
+              },
+            }}
+          />
+        </Grid>
+
+        {/* Contractor Search */}
+        <Grid item xs={12} md={4}>
+          <TextField
+            fullWidth
+            placeholder="Pretraži po izvođaču..."
+            value={filters.contractor}
+            onChange={(e) => onFilterChange({ ...filters, contractor: e.target.value })}
+            InputProps={{
+              startAdornment: <SearchIcon sx={{ color: "#42a5f5", mr: 1 }} />,
+              sx: {
+                backgroundColor: "#2a2a2a",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#444",
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#42a5f5",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#42a5f5",
+                },
+                "& input": {
+                  color: "#fff",
+                },
+                "& input::placeholder": {
+                  color: "#b0b0b0",
+                },
+              },
+            }}
+          />
         </Grid>
       </Grid>
 

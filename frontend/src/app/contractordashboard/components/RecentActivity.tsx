@@ -9,6 +9,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import BuildIcon from "@mui/icons-material/Build"
 import LocationOnIcon from "@mui/icons-material/LocationOn"
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney"
+import { ContractorActivity } from "../../../utils/dashboardApi"
 
 const ActivityCard = styled(Card)(({ theme }) => ({
   background: "#2a2a2a",
@@ -19,62 +20,11 @@ const ActivityCard = styled(Card)(({ theme }) => ({
   },
 }))
 
-interface Activity {
-  id: number
-  type: string
-  title: string
-  description: string
-  timestamp: string
-  status?: string
-  amount?: number
+interface RecentActivityProps {
+  recentActivities: ContractorActivity[]
 }
 
-export default function RecentActivity() {
-  // Mock data
-  const recentActivities: Activity[] = [
-    {
-      id: 1,
-      type: "completed",
-      title: "Popravka brave završena",
-      description: "Uspješno popravljena brava na ulaznim vratima",
-      timestamp: "2025-01-25T15:30:00Z",
-      status: "Završeno",
-      amount: 120,
-    },
-    {
-      id: 2,
-      type: "started",
-      title: "Početa popravka grijanja",
-      description: "Započeta popravka radijatora u stanu 22",
-      timestamp: "2025-01-25T10:15:00Z",
-      status: "U toku",
-    },
-    {
-      id: 3,
-      type: "arrived",
-      title: "Stigao na lokaciju",
-      description: "Stigao na adresu za popravku slavine",
-      timestamp: "2025-01-25T08:45:00Z",
-      status: "Na lokaciji",
-    },
-    {
-      id: 4,
-      type: "estimate",
-      title: "Procjena troškova",
-      description: "Poslana procjena za popravku elektroinstalacija",
-      timestamp: "2025-01-24T16:20:00Z",
-      amount: 180,
-    },
-    {
-      id: 5,
-      type: "completed",
-      title: "Kvar riješen",
-      description: "Uspješno riješen problem sa ventilacijom",
-      timestamp: "2025-01-24T14:10:00Z",
-      status: "Završeno",
-      amount: 95,
-    },
-  ]
+export default function RecentActivity({ recentActivities }: RecentActivityProps) {
 
   const getActivityIcon = (type: string) => {
     switch (type) {

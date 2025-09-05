@@ -224,6 +224,14 @@ def get_issues_for_manager_simple(session: Session, filters: dict, page: int = 1
             (Issue.location.ilike(search))
         )
     
+    if filters.get("address"):
+        address = f"%{filters['address']}%"
+        statement = statement.join(Issue.tenant).where(User.address.ilike(address))
+    
+    if filters.get("contractor"):
+        contractor = f"%{filters['contractor']}%"
+        statement = statement.join(Issue.assignments).join(Assignment.contractor).where(User.full_name.ilike(contractor))
+    
     if filters.get("category"):
         statement = statement.join(Issue.category).where(IssueCategory.name == filters["category"])
     
@@ -279,6 +287,14 @@ def get_issues_for_manager_complete(session: Session, filters: dict, page: int =
             (Issue.description.ilike(search)) |
             (Issue.location.ilike(search))
         )
+
+    if filters.get("address"):
+        address = f"%{filters['address']}%"
+        statement = statement.join(Issue.tenant).where(User.address.ilike(address))
+
+    if filters.get("contractor"):
+        contractor = f"%{filters['contractor']}%"
+        statement = statement.join(Issue.assignments).join(Assignment.contractor).where(User.full_name.ilike(contractor))
 
     if filters.get("category"):
         statement = statement.join(Issue.category).where(IssueCategory.name == filters["category"])

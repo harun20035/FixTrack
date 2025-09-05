@@ -31,6 +31,8 @@ export default function AllIssuesLayout() {
     dateTo: "",
     category: "all",
     priority: "all",
+    address: "",
+    contractor: "",
   })
 
   const handleFilterChange = (newFilters: FilterOptions) => {

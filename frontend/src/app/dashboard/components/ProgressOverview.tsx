@@ -4,6 +4,7 @@ import CardContent from "@mui/material/CardContent"
 import Typography from "@mui/material/Typography"
 import LinearProgress from "@mui/material/LinearProgress"
 import { styled } from "@mui/material/styles"
+import { TenantStats } from "../../../utils/dashboardApi"
 
 const StatsCard = styled(Card)(() => ({
   background: "#2a2a2a",
@@ -15,7 +16,11 @@ const StatsCard = styled(Card)(() => ({
   },
 }))
 
-export default function ProgressOverview() {
+interface ProgressOverviewProps {
+  stats: TenantStats
+}
+
+export default function ProgressOverview({ stats }: ProgressOverviewProps) {
   return (
     <Box>
       <Typography variant="h5" color="primary" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
@@ -29,11 +34,11 @@ export default function ProgressOverview() {
             Mjesečni Cilj
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Riješeno 8 od 10 prijava
+            Riješeno {stats.completed} od 10 prijava
           </Typography>
           <LinearProgress
             variant="determinate"
-            value={80}
+            value={stats.monthly_goal_progress}
             sx={{
               height: 8,
               borderRadius: 4,
@@ -44,7 +49,7 @@ export default function ProgressOverview() {
             }}
           />
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: "right" }}>
-            80%
+            {stats.monthly_goal_progress}%
           </Typography>
         </CardContent>
       </StatsCard>
@@ -56,7 +61,7 @@ export default function ProgressOverview() {
             Prosječno Vrijeme Rješavanja
           </Typography>
           <Typography variant="h4" color="#4caf50" sx={{ fontWeight: 700, mb: 1 }}>
-            2.5
+            {stats.average_resolution_time}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             dana
@@ -71,7 +76,7 @@ export default function ProgressOverview() {
             Ocjena Zadovoljstva
           </Typography>
           <Typography variant="h4" color="#ff9800" sx={{ fontWeight: 700, mb: 1 }}>
-            4.2
+            {stats.satisfaction_rating}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             od 5 zvjezdica

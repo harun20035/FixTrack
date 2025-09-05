@@ -2,8 +2,10 @@ export interface FilterOptions {
   searchTerm: string
   dateFrom: string
   dateTo: string
-  category: string
-  priority: string
+  category: "all" | "voda" | "struja" | "grijanje" | "ostalo"
+  priority: "all" | "visok" | "srednji" | "nizak"
+  address: string
+  contractor: string
 }
 
 export interface Issue {

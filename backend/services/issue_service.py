@@ -435,28 +435,54 @@ def create_admin_note(session: Session, user_id: int, tenant_id: int, note: str)
         "admin_id": user_id
     }
 
-def get_other_issues_for_manager(session: Session, user_id: int, filters: dict, page: int = 1, page_size: int = 10):
-    """Dohvaća sve issue-e koji NISU 'Primljeno' za upravnike"""
-    print(f"DEBUG: get_other_issues_for_manager called with user_id={user_id}, filters={filters}")
-    
+def create_issue_note(session: Session, user_id: int, issue_id: int, note: str):
     # Provjera da li je korisnik upravnik
     user = session.get(User, user_id)
     if not user:
-        print(f"DEBUG: User {user_id} not found")
         raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
     
     role = session.get(Role, user.role_id)
     if not role or "upravnik" not in role.name.lower():
-        print(f"DEBUG: User {user_id} is not manager, role: {role.name if role else 'None'}")
+        raise HTTPException(status_code=403, detail="Samo upravnici mogu slati napomene.")
+    
+    # Provjera da li issue postoji
+    issue = session.get(Issue, issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail="Prijava nije pronađena.")
+    
+    # Kreiraj napomenu za stanara koji je prijavio issue
+    admin_note = AdminNote(
+        admin_id=user_id,
+        tenant_id=issue.tenant_id,
+        note=note
+    )
+    
+    session.add(admin_note)
+    session.commit()
+    session.refresh(admin_note)
+    
+    return {
+        "message": "Napomena je uspješno poslana.",
+        "note_id": admin_note.id,
+        "issue_id": issue_id,
+        "tenant_id": issue.tenant_id,
+        "admin_id": user_id
+    }
+
+def get_other_issues_for_manager(session: Session, user_id: int, filters: dict, page: int = 1, page_size: int = 10):
+    """Dohvaća sve issue-e koji NISU 'Primljeno' za upravnike"""
+    
+    # Provjera da li je korisnik upravnik
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
+    
+    role = session.get(Role, user.role_id)
+    if not role or "upravnik" not in role.name.lower():
         raise HTTPException(status_code=403, detail="Samo upravnici mogu pristupiti ovim podacima.")
     
-    print(f"DEBUG: User {user_id} is manager, proceeding...")
-    
     # Dohvati sve issue-e koji NISU 'Primljeno'
-    print(f"DEBUG: Calling get_issues_for_manager_complete with filters: {filters}, page: {page}, page_size: {page_size}")
-    print(f"DEBUG: About to call repository function...")
     issues = get_issues_for_manager_complete(session, filters, page, page_size)
-    print(f"DEBUG: get_issues_for_manager_complete returned {len(issues)} issues")
 
     result = []
     for issue in issues:
@@ -488,45 +514,3 @@ def get_other_issues_for_manager(session: Session, user_id: int, filters: dict, 
         result.append(issue_dict)
 
     return result
-
-def create_issue_note(session: Session, user_id: int, issue_id: int, note: str):
-    """Kreira napomenu vezanu za određeni issue"""
-    # Provjera da li je korisnik upravnik
-    user = session.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
-    
-    role = session.get(Role, user.role_id)
-    if not role or "upravnik" not in role.name.lower():
-        raise HTTPException(status_code=403, detail="Samo upravnici mogu dodavati napomene.")
-    
-    # Provjera da li issue postoji
-    issue = session.get(Issue, issue_id)
-    if not issue:
-        raise HTTPException(status_code=404, detail="Prijava nije pronađena.")
-    
-    # Kreiraj napomenu vezanu za issue
-    admin_note = AdminNote(
-        admin_id=user_id,
-        tenant_id=issue.tenant_id,
-        note=note
-    )
-    session.add(admin_note)
-    session.commit()
-    session.refresh(admin_note)
-    
-    # Kreiraj notifikaciju za stanara
-    notification_service.create_new_notification(session, NotificationCreate(
-        user_id=issue.tenant_id,
-        issue_id=issue_id,
-        old_status=issue.status,
-        new_status=issue.status,
-        changed_by="Upravnik"
-    ))
-    
-    return {
-        "message": "Napomena je uspješno dodana.",
-        "note_id": admin_note.id,
-        "issue_id": issue_id,
-        "admin_id": user_id
-    }

@@ -9,6 +9,7 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp"
 import PeopleIcon from "@mui/icons-material/People"
 import BuildIcon from "@mui/icons-material/Build"
 import HomeIcon from "@mui/icons-material/Home"
+import { ManagerStats } from "../../../utils/dashboardApi"
 
 const OverviewCard = styled(Card)(({ theme }) => ({
   background: "#2a2a2a",
@@ -21,7 +22,11 @@ const OverviewCard = styled(Card)(({ theme }) => ({
   },
 }))
 
-export default function SystemOverview() {
+interface SystemOverviewProps {
+  stats: ManagerStats
+}
+
+export default function SystemOverview({ stats }: SystemOverviewProps) {
   return (
     <Box>
       <Typography variant="h5" color="primary" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
@@ -38,11 +43,11 @@ export default function SystemOverview() {
             </Typography>
           </Box>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Riješeno 27 od 35 prijava
+            Riješeno {stats.completed_this_month} od {stats.total_issues} prijava
           </Typography>
           <LinearProgress
             variant="determinate"
-            value={77}
+            value={stats.success_rate}
             sx={{
               height: 8,
               borderRadius: 4,
@@ -53,7 +58,7 @@ export default function SystemOverview() {
             }}
           />
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: "right" }}>
-            77% uspješnost
+            {stats.success_rate}% uspješnost
           </Typography>
         </CardContent>
       </OverviewCard>
@@ -134,7 +139,7 @@ export default function SystemOverview() {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Box sx={{ textAlign: "center" }}>
               <Typography variant="h4" color="#4caf50" sx={{ fontWeight: 700 }}>
-                2.8
+                {stats.average_resolution_time}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Prosječno vrijeme (dani)
@@ -142,10 +147,10 @@ export default function SystemOverview() {
             </Box>
             <Box sx={{ textAlign: "center" }}>
               <Typography variant="h4" color="#ff9800" sx={{ fontWeight: 700 }}>
-                94%
+                {stats.success_rate}%
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Zadovoljstvo stanara
+                Stopa uspješnosti
               </Typography>
             </Box>
           </Box>
