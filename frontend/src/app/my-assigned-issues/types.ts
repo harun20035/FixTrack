@@ -8,20 +8,45 @@ export interface FilterState {
 }
 
 export interface Tenant {
+  id: number
+  full_name: string
+  email: string
+  phone?: string
+  address?: string
+}
+
+export interface IssueCategory {
+  id: number
   name: string
-  apartment: string
-  phone: string
 }
 
 export interface Issue {
-  id: string
+  id: number
   title: string
-  description: string
-  category: "voda" | "struja" | "grijanje" | "ostalo"
-  priority: "visok" | "srednji" | "nizak"
-  status: "dodijeljeno" | "u toku" | "čeka dijelove" | "završeno"
+  description?: string
+  location?: string
+  status: string
+  created_at: string
   tenant: Tenant
-  location: string
-  dateReported: string
-  assignedTo: string
+  category: IssueCategory
+  images: Array<{
+    id: number
+    image_url: string
+  }>
+}
+
+export interface Assignment {
+  id: number
+  issue_id: number
+  contractor_id: number
+  status: string
+  estimated_cost?: number
+  actual_cost?: number
+  planned_date?: string
+  rejection_reason?: string
+  notes?: string
+  created_at: string
+  updated_at: string
+  issue: Issue
+  tenant: Tenant
 }

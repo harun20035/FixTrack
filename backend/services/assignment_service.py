@@ -1,4 +1,5 @@
 from sqlmodel import Session, select
+from sqlalchemy.orm import selectinload
 from models.assignment_model import Assignment
 from models.assignment_image_model import AssignmentImage
 from models.assignment_document_model import AssignmentDocument
@@ -68,7 +69,6 @@ def get_contractor_assignments(session: Session, contractor_id: int) -> List[dic
                     "location": issue.location,
                     "status": issue.status,
                     "created_at": issue.created_at,
-                    "updated_at": issue.updated_at,
                     "category": {
                         "id": issue.category.id,
                         "name": issue.category.name
@@ -93,6 +93,8 @@ def get_contractor_assignments(session: Session, contractor_id: int) -> List[dic
             continue
     
     print(f"DEBUG: Returning {len(result)} processed assignments")
+    for i, assignment in enumerate(result):
+        print(f"DEBUG: Assignment {i}: {assignment.get('id')}, Issue: {assignment.get('issue', {}).get('id')}, Tenant: {assignment.get('issue', {}).get('tenant', {}).get('full_name', 'N/A')}")
     return result
 
 def update_assignment_status_service(session: Session, assignment_id: int, contractor_id: int, status: str, notes: Optional[str] = None) -> dict:
@@ -251,4 +253,55 @@ def upload_assignment_document(session: Session, assignment_id: int, contractor_
         "document_id": document.id,
         "document_url": document_url,
         "document_type": document_type
+    }
+
+def update_issue_status_by_contractor_service(session: Session, assignment_id: int, contractor_id: int, new_status: str) -> dict:
+    """Ažuriraj status issue-a od strane izvođača"""
+    # Provjera da li je korisnik izvođač
+    user = session.get(User, contractor_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
+    
+    role = session.get(Role, user.role_id)
+    if not role or "izvođač" not in role.name.lower():
+        raise HTTPException(status_code=403, detail="Samo izvođači mogu mijenjati status issue-a.")
+    
+    # Provjera da li assignment pripada ovom izvođaču
+    assignment = session.get(Assignment, assignment_id)
+    if not assignment or assignment.contractor_id != contractor_id:
+        raise HTTPException(status_code=404, detail="Assignment nije pronađen.")
+    
+    # Provjera da li issue postoji
+    issue = session.get(Issue, assignment.issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail="Issue nije pronađen.")
+    
+    # Validacija statusa
+    valid_statuses = ["Primljeno", "Dodijeljeno izvođaču", "Na lokaciji", "Popravka u toku", "Čeka dijelove", "Završeno", "Otkazano"]
+    if new_status not in valid_statuses:
+        raise HTTPException(status_code=400, detail="Nevažeći status.")
+    
+    # Ažuriraj status issue-a
+    old_status = issue.status
+    issue.status = new_status
+    session.commit()
+    session.refresh(issue)
+    
+    # Kreiraj notifikaciju za stanara
+    from services import notification_service
+    from schemas.notification_schema import NotificationCreate
+    
+    notification_service.create_new_notification(session, NotificationCreate(
+        user_id=issue.tenant_id,
+        issue_id=issue.id,
+        old_status=old_status,
+        new_status=new_status,
+        changed_by="Izvođač"
+    ))
+    
+    return {
+        "message": "Status issue-a je uspješno promijenjen.",
+        "issue_id": issue.id,
+        "old_status": old_status,
+        "new_status": new_status
     } 

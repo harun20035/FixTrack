@@ -131,4 +131,22 @@ async def upload_assignment_document(
         )
         return {"success": True, "data": result}
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/api/contractor/assignments/{assignment_id}/issue-status")
+def update_issue_status_by_contractor(
+    assignment_id: int,
+    new_status: str,
+    request: Request,
+    session: Session = Depends(get_session)
+):
+    """Ažuriraj status issue-a od strane izvođača"""
+    try:
+        user_id = get_current_user_id(request)
+        
+        result = assignment_service.update_issue_status_by_contractor_service(
+            session, assignment_id, user_id, new_status
+        )
+        return {"success": True, "data": result}
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 
