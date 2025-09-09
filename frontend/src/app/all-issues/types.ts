@@ -29,6 +29,4 @@ export interface FilterOptions {
   dateTo: string
   category: "all" | "voda" | "struja" | "grijanje" | "ostalo"
   priority: "all" | "visok" | "srednji" | "nizak"
-  address: string
-  contractor: string
 }

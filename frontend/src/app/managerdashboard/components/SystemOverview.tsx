@@ -9,6 +9,8 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp"
 import PeopleIcon from "@mui/icons-material/People"
 import BuildIcon from "@mui/icons-material/Build"
 import HomeIcon from "@mui/icons-material/Home"
+import PendingIcon from "@mui/icons-material/Pending"
+import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import { ManagerStats } from "../../../utils/dashboardApi"
 
 const OverviewCard = styled(Card)(({ theme }) => ({
@@ -63,72 +65,38 @@ export default function SystemOverview({ stats }: SystemOverviewProps) {
         </CardContent>
       </OverviewCard>
 
-      {/* Active Resources */}
+      {/* Current Status Overview */}
       <OverviewCard>
         <CardContent sx={{ p: 3 }}>
           <Typography variant="h6" color="primary" gutterBottom sx={{ fontWeight: 600 }}>
-            Aktivni Resursi
+            Trenutno Stanje
           </Typography>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <PeopleIcon sx={{ fontSize: 20, color: "#42a5f5" }} />
-                <Typography variant="body2">Stanari</Typography>
+                <PendingIcon sx={{ fontSize: 20, color: "#ff9800" }} />
+                <Typography variant="body2">Na čekanju</Typography>
               </Box>
-              <Chip label="156" color="primary" size="small" />
+              <Chip label={stats.pending_assignment} color="warning" size="small" />
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <BuildIcon sx={{ fontSize: 20, color: "#42a5f5" }} />
-                <Typography variant="body2">Izvođači</Typography>
+                <BuildIcon sx={{ fontSize: 20, color: "#f44336" }} />
+                <Typography variant="body2">U toku</Typography>
               </Box>
-              <Chip label="12" color="secondary" size="small" />
+              <Chip label={stats.in_progress} color="error" size="small" />
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <HomeIcon sx={{ fontSize: 20, color: "#42a5f5" }} />
-                <Typography variant="body2">Zgrade</Typography>
+                <CheckCircleIcon sx={{ fontSize: 20, color: "#4caf50" }} />
+                <Typography variant="body2">Završeno ovaj mjesec</Typography>
               </Box>
-              <Chip label="8" color="success" size="small" />
+              <Chip label={stats.completed_this_month} color="success" size="small" />
             </Box>
           </Box>
         </CardContent>
       </OverviewCard>
 
-      {/* Recent Activity Summary */}
-      <OverviewCard>
-        <CardContent sx={{ p: 3 }}>
-          <Typography variant="h6" color="primary" gutterBottom sx={{ fontWeight: 600 }}>
-            Nedavna Aktivnost
-          </Typography>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-            <Box>
-              <Typography variant="body2" color="primary" sx={{ fontWeight: 500 }}>
-                Nova prijava - Stan 28
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Prije 15 minuta
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="body2" color="primary" sx={{ fontWeight: 500 }}>
-                Zadatak završen - Lift
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Prije 1 sat
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="body2" color="primary" sx={{ fontWeight: 500 }}>
-                Izvođač dodijeljen
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Prije 2 sata
-              </Typography>
-            </Box>
-          </Box>
-        </CardContent>
-      </OverviewCard>
 
       {/* Quick Stats */}
       <OverviewCard>

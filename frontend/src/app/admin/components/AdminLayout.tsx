@@ -1,16 +1,32 @@
 "use client"
-import { Box, Container, Paper, Typography, IconButton, Grid } from "@mui/material"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import { Box, Container, Paper, Typography, Grid, AppBar, Toolbar, Button, SvgIcon, type SvgIconProps } from "@mui/material"
+import { Logout } from "@mui/icons-material"
 import { useRouter } from "next/navigation"
 import RoleRequests from "./RoleRequests"
 import UserManagement from "./UserManagement"
 import SystemSettings from "./SystemSettings"
+import SurveyManagement from "./SurveyManagement"
+
+function FixTrackIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 32 32" fontSize="large">
+      <circle cx="16" cy="16" r="15" fill="#42a5f5" />
+      <rect x="10" y="10" width="12" height="12" rx="3" fill="#111" />
+    </SvgIcon>
+  )
+}
 
 export default function AdminLayout() {
   const router = useRouter()
 
-  const handleBack = () => {
-    router.back()
+  const handleHome = () => {
+    router.push("/")
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth_token")
+    localStorage.removeItem("auth_token_exp")
+    router.push("/login")
   }
 
   return (
@@ -22,54 +38,57 @@ export default function AdminLayout() {
       }}
     >
       {/* Header */}
-      <Paper
+      <AppBar
+        position="static"
+        color="transparent"
         elevation={0}
         sx={{
-          bgcolor: "#1e1e1e",
+          background: "#181818",
           borderBottom: "1px solid #333",
-          position: "sticky",
-          top: 0,
-          zIndex: 1000,
         }}
       >
-        <Container maxWidth="xl">
+        <Toolbar sx={{ justifyContent: "space-between" }}>
           <Box
             sx={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
-              py: 2,
+              cursor: "pointer",
             }}
+            onClick={handleHome}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <IconButton
-                onClick={handleBack}
-                sx={{
-                  color: "#fff",
-                  "&:hover": { bgcolor: "#333" },
-                }}
-              >
-                <ArrowBackIcon />
-              </IconButton>
-              <Typography variant="body1" sx={{ color: "#fff" }}>
-                Nazad
-              </Typography>
-            </Box>
-
+            <FixTrackIcon sx={{ mr: 2 }} />
             <Typography
               variant="h6"
+              color="primary"
               sx={{
-                fontWeight: "bold",
-                color: "#42a5f5",
+                fontWeight: 700,
+                "&:hover": {
+                  color: "#1976d2",
+                },
               }}
             >
-              FixTrack
+              FixTrack - Admin Panel
             </Typography>
-
-            <Box sx={{ width: 80 }} />
           </Box>
-        </Container>
-      </Paper>
+          
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<Logout />}
+            onClick={handleLogout}
+            sx={{
+              borderColor: "#f44336",
+              color: "#f44336",
+              "&:hover": {
+                borderColor: "#d32f2f",
+                backgroundColor: "rgba(244, 67, 54, 0.04)",
+              },
+            }}
+          >
+            Odjavi se
+          </Button>
+        </Toolbar>
+      </AppBar>
 
       {/* Main Content */}
       <Container maxWidth="xl" sx={{ py: 3 }}>
@@ -86,17 +105,22 @@ export default function AdminLayout() {
 
         <Grid container spacing={3}>
           {/* Role Requests */}
-          <Grid item xs={12} lg={8}>
+          <Grid item xs={12} lg={6}>
             <RoleRequests />
           </Grid>
 
+          {/* Survey Management */}
+          <Grid item xs={12} lg={6}>
+            <SurveyManagement />
+          </Grid>
+
           {/* User Management & System Settings */}
-          <Grid item xs={12} lg={4}>
+          <Grid item xs={12} lg={12}>
             <Grid container spacing={3}>
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
                 <UserManagement />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
                 <SystemSettings />
               </Grid>
             </Grid>

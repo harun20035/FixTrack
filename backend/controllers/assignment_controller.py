@@ -149,4 +149,146 @@ def update_issue_status_by_contractor(
         )
         return {"success": True, "data": result}
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/api/contractor/assignments/{assignment_id}/planned-data")
+async def update_planned_data(
+    assignment_id: int,
+    request: Request,
+    session: Session = Depends(get_session)
+):
+    """Ažuriraj planirani datum i procjenu troškova"""
+    try:
+        user_id = get_current_user_id(request)
+        
+        # Dohvati podatke iz request body-ja
+        import json
+        body = await request.body()
+        data = json.loads(body)
+        
+        planned_date = data.get("planned_date")
+        estimated_cost = data.get("estimated_cost")
+        
+        if not planned_date or estimated_cost is None:
+            raise HTTPException(status_code=400, detail="planned_date i estimated_cost su obavezni")
+        
+        result = assignment_service.update_planned_data_service(
+            session, assignment_id, user_id, planned_date, estimated_cost
+        )
+        return {"success": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/api/contractor/assignments/{assignment_id}/planned-data")
+def get_planned_data(
+    assignment_id: int,
+    request: Request,
+    session: Session = Depends(get_session)
+):
+    """Dohvati planirani datum i procjenu troškova"""
+    try:
+        user_id = get_current_user_id(request)
+        
+        result = assignment_service.get_planned_data_service(
+            session, assignment_id, user_id
+        )
+        return {"success": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/api/contractor/assignments/{assignment_id}/completion")
+async def upload_completion_data(
+    assignment_id: int,
+    notes: str = Form(default=""),
+    images: List[UploadFile] = File(default=[]),
+    warranty_pdf: UploadFile = File(default=None),
+    request: Request = None,
+    session: Session = Depends(get_session)
+):
+    """Upload završnih slika, bilješki i PDF-a za garanciju"""
+    try:
+        user_id = get_current_user_id(request)
+        
+        result = await assignment_service.upload_completion_data_service(
+            session, assignment_id, user_id, notes, images, warranty_pdf
+        )
+        return {"success": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/api/contractor/assignments/{assignment_id}/completion")
+def get_completion_data(
+    assignment_id: int,
+    request: Request,
+    session: Session = Depends(get_session)
+):
+    """Dohvati završne slike i bilješke"""
+    try:
+        user_id = get_current_user_id(request)
+        
+        result = assignment_service.get_completion_data_service(
+            session, assignment_id, user_id
+        )
+        return {"success": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/api/contractor/assignments/{assignment_id}/cancellation")
+async def update_cancellation_reason(
+    assignment_id: int,
+    request: Request,
+    session: Session = Depends(get_session)
+):
+    """Ažuriraj razlog otkazivanja"""
+    try:
+        user_id = get_current_user_id(request)
+        
+        # Dohvati podatke iz request body-ja
+        import json
+        body = await request.body()
+        data = json.loads(body)
+        
+        cancellation_reason = data.get("cancellation_reason")
+        
+        if not cancellation_reason:
+            raise HTTPException(status_code=400, detail="cancellation_reason je obavezan")
+        
+        result = assignment_service.update_cancellation_reason_service(
+            session, assignment_id, user_id, cancellation_reason
+        )
+        return {"success": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/api/contractor/assignments/{assignment_id}/cancellation")
+def get_cancellation_reason(
+    assignment_id: int,
+    request: Request,
+    session: Session = Depends(get_session)
+):
+    """Dohvati razlog otkazivanja"""
+    try:
+        user_id = get_current_user_id(request)
+        
+        result = assignment_service.get_cancellation_reason_service(
+            session, assignment_id, user_id
+        )
+        return {"success": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/api/contractor/completed-issues")
+def get_completed_issues(
+    request: Request,
+    session: Session = Depends(get_session)
+):
+    """Dohvati sve završene issue-e za izvođača"""
+    try:
+        user_id = get_current_user_id(request)
+        
+        result = assignment_service.get_completed_issues_service(
+            session, user_id
+        )
+        return {"success": True, "data": result}
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 

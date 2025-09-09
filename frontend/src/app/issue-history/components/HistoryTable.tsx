@@ -59,23 +59,34 @@ export default function HistoryTable({ filters, page, setPage, rowsPerPage, setR
   useEffect(() => {
     setLoading(true);
     const token = localStorage.getItem("auth_token");
-    const params = new URLSearchParams({
-      search: filters.searchTerm,
-      category: filters.category,
-      status: filters.status,
-      date_from: filters.dateFrom,
-      date_to: filters.dateTo,
-      sort_by: filters.sortBy,
-      page: (page + 1).toString(),
-      page_size: rowsPerPage.toString(),
-    });
+    const params = new URLSearchParams();
+    
+    // Dodaj samo ne-prazne filtere
+    if (filters.searchTerm) params.append('search', filters.searchTerm);
+    if (filters.category) params.append('category', filters.category);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.dateFrom) params.append('date_from', filters.dateFrom);
+    if (filters.dateTo) params.append('date_to', filters.dateTo);
+    if (filters.sortBy) params.append('sort_by', filters.sortBy);
+    
+    params.append('page', (page + 1).toString());
+    params.append('page_size', rowsPerPage.toString());
+    
+    console.log("DEBUG: Filters being sent:", filters);
+    console.log("DEBUG: URL params:", params.toString());
     fetch(`http://localhost:8000/api/issue-history?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
       .then(data => {
+        console.log("DEBUG: API response:", data);
+        console.log("DEBUG: Issues:", data.issues);
+        console.log("DEBUG: Total:", data.total);
         setIssues(data.issues || []);
         setTotal(data.total || 0);
+      })
+      .catch(error => {
+        console.error("DEBUG: API error:", error);
       })
       .finally(() => setLoading(false));
   }, [filters, page, rowsPerPage]);
@@ -84,7 +95,7 @@ export default function HistoryTable({ filters, page, setPage, rowsPerPage, setR
     switch (status) {
       case "Završeno":
         return "success"
-      case "Odbijeno":
+      case "Otkazano":
         return "error"
       case "U toku":
         return "primary"
@@ -140,7 +151,6 @@ export default function HistoryTable({ filters, page, setPage, rowsPerPage, setR
               <TableCell>Lokacija</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Datum Prijave</TableCell>
-              <TableCell>Datum Završetka</TableCell>
               <TableCell>Izvođač</TableCell>
               <TableCell>Komentari</TableCell>
               <TableCell>Ocjena</TableCell>
@@ -156,10 +166,10 @@ export default function HistoryTable({ filters, page, setPage, rowsPerPage, setR
                       {issue.title}
                     </Typography>
                     <Chip
-                      label={issue.category}
+                      label={typeof issue.category === 'object' ? issue.category?.name : issue.category}
                       size="small"
                       sx={{
-                        backgroundColor: getCategoryColor(issue.category),
+                        backgroundColor: getCategoryColor(typeof issue.category === 'object' ? issue.category?.name : issue.category),
                         color: "white",
                         fontSize: "0.7rem",
                       }}
@@ -178,14 +188,13 @@ export default function HistoryTable({ filters, page, setPage, rowsPerPage, setR
                   <Typography variant="body2">{issue.createdAt ? formatDate(issue.createdAt) : "-"}</Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2">{issue.completedAt ? formatDate(issue.completedAt) : "-"}</Typography>
-                </TableCell>
-                <TableCell>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     {issue.assignedTo ? (
                       <>
                         <PersonIcon sx={{ fontSize: 16, color: "#42a5f5" }} />
-                        <Typography variant="body2">{issue.assignedTo}</Typography>
+                        <Typography variant="body2">
+                          {typeof issue.assignedTo === 'object' ? issue.assignedTo?.full_name || issue.assignedTo?.name : issue.assignedTo}
+                        </Typography>
                       </>
                     ) : (
                       <Typography variant="body2" color="text.secondary">
@@ -252,7 +261,7 @@ export default function HistoryTable({ filters, page, setPage, rowsPerPage, setR
           {selectedIssue && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Typography variant="h6" color="primary">{selectedIssue.title}</Typography>
-              <Typography variant="body1"><b>Kategorija:</b> {selectedIssue.category}</Typography>
+              <Typography variant="body1"><b>Kategorija:</b> {typeof selectedIssue.category === 'object' ? selectedIssue.category?.name : selectedIssue.category}</Typography>
               <Typography variant="body1"><b>Status:</b> {selectedIssue.status}</Typography>
               <Typography variant="body1"><b>Lokacija:</b> {selectedIssue.location || "Nije specificirano"}</Typography>
               <Typography variant="body1"><b>Datum prijave:</b> {selectedIssue.createdAt ? formatDate(selectedIssue.createdAt) : "-"}</Typography>

@@ -9,7 +9,9 @@ from .rating_model import Rating
 from .assignment_model import Assignment
 from .assignment_image_model import AssignmentImage
 from .assignment_document_model import AssignmentDocument
+from .assignment_notification_model import AssignmentNotification
 from .survey_model import Survey
 from .admin_note_model import AdminNote
+from .notes_model import Notes
 from .role_request_model import RoleRequest
 from .system_settings_model import SystemSettings 

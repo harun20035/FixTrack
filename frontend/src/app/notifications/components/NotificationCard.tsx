@@ -55,7 +55,7 @@ export default function NotificationCard({ notification, onMarkAsRead }: Notific
         return "warning"
       case "Završeno":
         return "success"
-      case "Odbijeno":
+      case "Otkazano":
         return "error"
       default:
         return "default"

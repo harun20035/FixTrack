@@ -16,6 +16,7 @@ class Issue(SQLModel, table=True):
     category: Optional["IssueCategory"] = Relationship(back_populates="issues")
     images: List["IssueImage"] = Relationship(back_populates="issue")
     comments: List["Comment"] = Relationship(back_populates="issue")
+    notes: List["Notes"] = Relationship(back_populates="issue")
     ratings: List["Rating"] = Relationship(back_populates="issue")
     assignments: List["Assignment"] = Relationship(back_populates="issue") 
     notifications: List["Notification"] = Relationship(back_populates="issue") 

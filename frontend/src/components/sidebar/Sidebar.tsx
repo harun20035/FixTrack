@@ -22,6 +22,7 @@ import Badge from "@mui/material/Badge";
 import { useEffect, useState } from "react";
 import { authFetch } from "../../utils/authFetch";
 import BuildIcon from "@mui/icons-material/Build";
+import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
 
 const drawerWidth = 280
 
@@ -170,7 +171,7 @@ export default function Sidebar({
         ))}
       </List>
 
-      {/* Izvođač dugme */}
+      {/* Role upgrade dugmad */}
       {userInfo && (
         (userInfo.role === "Stanar") ? (
           <List sx={{ px: 2, py: 0 }}>
@@ -190,6 +191,22 @@ export default function Sidebar({
                 <ListItemText primary="Postani izvođač" primaryTypographyProps={{ fontSize: "0.9rem" }} />
               </ListItemButton>
             </ListItem>
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                onClick={() => router.push("/managerform")}
+                sx={{
+                  borderRadius: 2,
+                  "&:hover": {
+                    backgroundColor: "rgba(66, 165, 245, 0.1)",
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ color: "#42a5f5", minWidth: 40 }}>
+                  <SupervisorAccountIcon />
+                </ListItemIcon>
+                <ListItemText primary="Postani upravnik" primaryTypographyProps={{ fontSize: "0.9rem" }} />
+              </ListItemButton>
+            </ListItem>
           </List>
         ) : (userInfo.role.includes("Izvođač")) ? (
           <List sx={{ px: 2, py: 0 }}>
@@ -207,6 +224,22 @@ export default function Sidebar({
                   <BuildIcon />
                 </ListItemIcon>
                 <ListItemText primary="Izvođač dashboard" primaryTypographyProps={{ fontSize: "0.9rem" }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                onClick={() => router.push("/managerform")}
+                sx={{
+                  borderRadius: 2,
+                  "&:hover": {
+                    backgroundColor: "rgba(66, 165, 245, 0.1)",
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ color: "#42a5f5", minWidth: 40 }}>
+                  <SupervisorAccountIcon />
+                </ListItemIcon>
+                <ListItemText primary="Postani upravnik" primaryTypographyProps={{ fontSize: "0.9rem" }} />
               </ListItemButton>
             </ListItem>
           </List>

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Box from "@mui/material/Box"
 import Card from "@mui/material/Card"
 import CardContent from "@mui/material/CardContent"
@@ -48,6 +48,12 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
   const [showNoteModal, setShowNoteModal] = useState(false)
   const [noteText, setNoteText] = useState("")
   const [addingNote, setAddingNote] = useState(false)
+  const [showNotesModal, setShowNotesModal] = useState(false)
+  const [notes, setNotes] = useState<any[]>([])
+  const [loadingNotes, setLoadingNotes] = useState(false)
+  const [showCommentsModal, setShowCommentsModal] = useState(false)
+  const [comments, setComments] = useState<any[]>([])
+  const [loadingComments, setLoadingComments] = useState(false)
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -83,6 +89,58 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
     } finally {
       setUpdatingStatus(false)
     }
+  }
+
+  const fetchNotes = async () => {
+    try {
+      const response = await authFetch(`http://localhost:8000/api/manager/issues/${issue.id}/notes`)
+      if (!response.ok) {
+        throw new Error("Greška pri dohvatanju napomena")
+      }
+      const adminNotes = await response.json()
+      setNotes(adminNotes)
+    } catch (error) {
+      console.error("Greška pri dohvatanju napomena:", error)
+      setSnackbar({
+        open: true,
+        message: "Greška pri dohvatanju napomena",
+        severity: "error"
+      })
+    }
+  }
+
+  const handleViewNotes = async () => {
+    handleMenuClose() // Zatvori menu prvo
+    setLoadingNotes(true)
+    setShowNotesModal(true)
+    await fetchNotes()
+    setLoadingNotes(false)
+  }
+
+  const fetchComments = async () => {
+    try {
+      const response = await authFetch(`http://localhost:8000/api/issues/${issue.id}/comments`)
+      if (!response.ok) {
+        throw new Error("Greška pri dohvatanju komentara")
+      }
+      const userComments = await response.json()
+      setComments(userComments)
+    } catch (error) {
+      console.error("Greška pri dohvatanju komentara:", error)
+      setSnackbar({
+        open: true,
+        message: "Greška pri dohvatanju komentara",
+        severity: "error"
+      })
+    }
+  }
+
+  const handleViewComments = async () => {
+    handleMenuClose() // Zatvori menu prvo
+    setLoadingComments(true)
+    setShowCommentsModal(true)
+    await fetchComments()
+    setLoadingComments(false)
   }
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -124,10 +182,15 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
         message: "Napomena je uspješno dodana!",
         severity: "success"
       })
+      
+      // Osveži napomene ako je modal za napomene otvoren
+      if (showNotesModal) {
+        await fetchNotes()
+      }
     } catch (error) {
       setSnackbar({
         open: true,
-        message: "Greška pri dodavanju napomene: " + error.message,
+        message: "Greška pri dodavanju napomene: " + (error instanceof Error ? error.message : "Nepoznata greška"),
         severity: "error"
       })
     } finally {
@@ -138,6 +201,11 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
   const handleCloseSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }))
   }
+
+  // Zatvori snackbar kada se issue promeni
+  useEffect(() => {
+    handleCloseSnackbar()
+  }, [issue.id])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -319,8 +387,8 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
             <Button
               variant="outlined"
               size="small"
-              startIcon={<DescriptionIcon />}
               onClick={() => setShowNoteModal(true)}
+              startIcon={<DescriptionIcon />}
               sx={{
                 borderColor: "#22c55e",
                 color: "#22c55e",
@@ -436,8 +504,11 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
             },
           }}
         >
-        <MenuItem onClick={handleOpenStatusModal}>
-          Promijeni status
+        <MenuItem onClick={handleViewNotes}>
+          Pogledaj napomene
+        </MenuItem>
+        <MenuItem onClick={handleViewComments}>
+          Pogledaj komentare
         </MenuItem>
         </Menu>
 
@@ -513,6 +584,156 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
             }}
           >
             {addingNote ? <CircularProgress size={20} /> : "Dodaj napomenu"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Notes Modal */}
+      <Dialog
+        open={showNotesModal}
+        onClose={() => {
+          setShowNotesModal(false)
+          handleCloseSnackbar() // Zatvori snackbar kada se zatvori modal
+        }}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: "#2a2a2a",
+            color: "#fff",
+            border: "1px solid #444",
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: "#fff", borderBottom: "1px solid #444" }}>
+          Komentari za: {issue.title}
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          {loadingNotes ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : notes.length === 0 ? (
+            <Typography variant="body1" sx={{ color: "#b0b0b0", textAlign: "center", py: 4 }}>
+              Nema komentara za ovaj issue.
+            </Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {notes.map((note, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    p: 2,
+                    backgroundColor: "#1a1a1a",
+                    borderRadius: 2,
+                    border: "1px solid #444",
+                  }}
+                >
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ color: "#42a5f5", fontWeight: 600 }}>
+                      {note.admin?.full_name || "Nepoznato"}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#b0b0b0" }}>
+                      {new Date(note.created_at).toLocaleString("bs-BA")}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ color: "#fff" }}>
+                    {note.note}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, borderTop: "1px solid #444" }}>
+          <Button
+            onClick={() => {
+              setShowNotesModal(false)
+              handleCloseSnackbar() // Zatvori snackbar kada se zatvori modal
+            }}
+            sx={{
+              color: "#b0b0b0",
+              "&:hover": {
+                backgroundColor: "rgba(66, 165, 245, 0.1)",
+              },
+            }}
+          >
+            Zatvori
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Comments Modal */}
+      <Dialog
+        open={showCommentsModal}
+        onClose={() => {
+          setShowCommentsModal(false)
+          handleCloseSnackbar() // Zatvori snackbar kada se zatvori modal
+        }}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: "#2a2a2a",
+            color: "#fff",
+            border: "1px solid #444",
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: "#fff", borderBottom: "1px solid #444" }}>
+          Komentari korisnika za: {issue.title}
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          {loadingComments ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : comments.length === 0 ? (
+            <Typography variant="body1" sx={{ color: "#b0b0b0", textAlign: "center", py: 4 }}>
+              Nema komentara od korisnika za ovaj issue.
+            </Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {comments.map((comment, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    p: 2,
+                    backgroundColor: "#1a1a1a",
+                    borderRadius: 2,
+                    border: "1px solid #444",
+                  }}
+                >
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ color: "#42a5f5", fontWeight: 600 }}>
+                      {comment.user?.full_name || "Nepoznato"}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#b0b0b0" }}>
+                      {new Date(comment.created_at).toLocaleString("bs-BA")}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ color: "#fff" }}>
+                    {comment.content}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, borderTop: "1px solid #444" }}>
+          <Button
+            onClick={() => {
+              setShowCommentsModal(false)
+              handleCloseSnackbar() // Zatvori snackbar kada se zatvori modal
+            }}
+            sx={{
+              color: "#b0b0b0",
+              "&:hover": {
+                backgroundColor: "rgba(66, 165, 245, 0.1)",
+              },
+            }}
+          >
+            Zatvori
           </Button>
         </DialogActions>
       </Dialog>

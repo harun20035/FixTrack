@@ -10,7 +10,7 @@ from schemas.role_request_schema import RoleRequestCreate, RoleRequestUpdate, Ro
 from fastapi import HTTPException
 from typing import List, Optional
 
-def create_new_role_request(session: Session, user_id: int, data: RoleRequestCreate) -> RoleRequestRead:
+def create_new_role_request(session: Session, user_id: int, data: RoleRequestCreate, cv_file_url: Optional[str] = None) -> RoleRequestRead:
     # Provjera da li korisnik postoji
     user = session.get(User, user_id)
     if not user:
@@ -33,7 +33,7 @@ def create_new_role_request(session: Session, user_id: int, data: RoleRequestCre
     
     # Kreiranje zahtjeva
     role_request = create_role_request(
-        session, user_id, user.role_id, data.requested_role_id, data.motivation
+        session, user_id, user.role_id, data.requested_role_id, data.motivation, cv_file_url
     )
     
     # Dohvati podatke za response
@@ -49,6 +49,7 @@ def create_new_role_request(session: Session, user_id: int, data: RoleRequestCre
         motivation=role_request.motivation,
         status=role_request.status,
         admin_notes=role_request.admin_notes,
+        cv_file_url=role_request.cv_file_url,
         created_at=role_request.created_at,
         updated_at=role_request.updated_at,
         user_name=user.full_name,
@@ -74,6 +75,7 @@ def get_all_role_requests(session: Session, status: Optional[str] = None) -> Lis
             motivation=req.motivation,
             status=req.status,
             admin_notes=req.admin_notes,
+            cv_file_url=req.cv_file_url,
             created_at=req.created_at,
             updated_at=req.updated_at,
             user_name=req.user.full_name,
@@ -127,6 +129,7 @@ def update_role_request(session: Session, request_id: int, data: RoleRequestUpda
         motivation=updated_request.motivation,
         status=updated_request.status,
         admin_notes=updated_request.admin_notes,
+        cv_file_url=updated_request.cv_file_url,
         created_at=updated_request.created_at,
         updated_at=updated_request.updated_at,
         user_name=user.full_name,
@@ -152,6 +155,7 @@ def get_user_role_requests_service(session: Session, user_id: int) -> List[RoleR
             motivation=req.motivation,
             status=req.status,
             admin_notes=req.admin_notes,
+            cv_file_url=req.cv_file_url,
             created_at=req.created_at,
             updated_at=req.updated_at,
             user_name=req.user.full_name,

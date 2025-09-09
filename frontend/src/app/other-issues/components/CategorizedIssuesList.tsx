@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import Box from "@mui/material/Box"
 import Typography from "@mui/material/Typography"
 import Grid from "@mui/material/Grid"
@@ -60,58 +60,59 @@ export function CategorizedIssuesList({ filters }: CategorizedIssuesListProps) {
   const [error, setError] = useState<string | null>(null)
 
   // Dohvati podatke sa backend-a
-  useEffect(() => {
-    const fetchIssues = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        // Dohvati issue-e koji nisu "Primljeno" koristeći novi endpoint
-         
-         const params = new URLSearchParams()
-         if (filters.searchTerm) {
-           params.append('search', filters.searchTerm)
-         }
-         if (filters.category && filters.category !== 'all') {
-           params.append('category', filters.category)
-         }
-         if (filters.dateFrom) {
-           params.append('date_from', filters.dateFrom)
-         }
-         if (filters.dateTo) {
-           params.append('date_to', filters.dateTo)
-         }
-         if (filters.address) {
-           params.append('address', filters.address)
-         }
-         if (filters.contractor) {
-           params.append('contractor', filters.contractor)
-         }
-         params.append('sort_by', 'created_at_desc')
-         
-         const response = await authFetch(`http://localhost:8000/api/manager/other-issues?${params}`)
-        
-        if (!response.ok) {
-          const errorText = await response.text()
-          throw new Error(`Greška pri dohvatanju podataka: ${response.status} ${errorText}`)
-        }
-        
-        const otherIssues: Issue[] = await response.json()
-        setIssues(otherIssues)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Nepoznata greška")
-      } finally {
-        setLoading(false)
+  const fetchIssues = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Dohvati issue-e koji nisu "Primljeno" koristeći novi endpoint
+       
+       const params = new URLSearchParams()
+       if (filters.searchTerm) {
+         params.append('search', filters.searchTerm)
+       }
+       if (filters.category && filters.category !== 'all') {
+         params.append('category', filters.category)
+       }
+       if (filters.dateFrom) {
+         params.append('date_from', filters.dateFrom)
+       }
+       if (filters.dateTo) {
+         params.append('date_to', filters.dateTo)
+       }
+       if (filters.address) {
+         params.append('address', filters.address)
+       }
+       if (filters.contractor) {
+         params.append('contractor', filters.contractor)
+       }
+       params.append('sort_by', 'created_at_desc')
+       params.append('page_size', '50') // Povećaj page_size da prikaže više prijava
+       
+       const response = await authFetch(`http://localhost:8000/api/manager/other-issues?${params}`)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Greška pri dohvatanju podataka: ${response.status} ${errorText}`)
       }
+      
+      const otherIssues: Issue[] = await response.json()
+      setIssues(otherIssues)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Nepoznata greška")
+    } finally {
+      setLoading(false)
     }
+  }, [filters])
 
+  useEffect(() => {
     fetchIssues()
-  }, [])
+  }, [fetchIssues])
 
   // Refetch kada se filteri promene
   useEffect(() => {
     fetchIssues()
-  }, [filters])
+  }, [filters, fetchIssues])
 
   // Koristimo server-side filtering, tako da ne treba client-side filtering
   const filteredIssues = issues
@@ -200,7 +201,7 @@ export function CategorizedIssuesList({ filters }: CategorizedIssuesListProps) {
 
                 <Grid container spacing={3}>
                   {statusIssues.map((issue) => (
-                    <Grid item xs={12} lg={6} key={issue.id}>
+                    <Grid size={{ xs: 12, lg: 6 }} key={issue.id}>
                       <IssueCard issue={issue} onStatusChange={(updatedIssue) => {
                         // Ažuriraj lokalno stanje kada se promijeni status
                         setIssues(prev => prev.map(i => i.id === updatedIssue.id ? updatedIssue : i))

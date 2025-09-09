@@ -54,7 +54,7 @@ def get_my_surveys(
     user_id = get_current_user_id(request)
     return get_user_surveys_service(session, user_id)
 
-@router.get("/surveys/all", response_model=List[SurveyRead])
+@router.get("/surveys/all")
 def get_all_surveys_endpoint(
     request: Request,
     session: Session = Depends(get_session)

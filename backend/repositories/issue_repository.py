@@ -1,6 +1,6 @@
 from sqlmodel import Session, select, delete, func
 from sqlalchemy.orm import selectinload
-from models import Issue, IssueImage, IssueCategory, Comment, Rating, Assignment, Survey, AssignmentImage, AssignmentDocument
+from models import Issue, IssueImage, IssueCategory, Comment, Rating, Assignment, Survey, AssignmentImage, AssignmentDocument, User
 from typing import List, Optional, Dict
 from schemas.issue_schema import HistoryStats
 
@@ -78,7 +78,13 @@ def get_user_issue_history(
     page: int = 1,
     page_size: int = 10
 ):
-    statement = select(Issue).where(Issue.tenant_id == user_id)
+    from sqlalchemy.orm import selectinload
+    
+    statement = select(Issue).options(
+        selectinload(Issue.category),
+        selectinload(Issue.assignments).selectinload(Assignment.contractor)
+    ).where(Issue.tenant_id == user_id)
+    
     if filters.get("search"):
         search = f"%{filters['search']}%"
         statement = statement.where(
@@ -100,23 +106,65 @@ def get_user_issue_history(
         statement = statement.order_by(Issue.created_at.asc())
     elif sort_by == "created_at_desc":
         statement = statement.order_by(Issue.created_at.desc())
+    elif sort_by == "status_created_desc":
+        # Sortiraj po statusu (Završeno prvi), pa po datumu
+        statement = statement.order_by(
+            Issue.status.desc(),  # Završeno će biti prvi
+            Issue.created_at.desc()
+        )
+    else:
+        # Default sortiranje
+        statement = statement.order_by(Issue.created_at.desc())
     # Get all issues for total count
     all_issues = session.exec(statement).all()
     total = len(all_issues)
+    
+    # Debug logging
+    print(f"DEBUG REPO: User {user_id} has {total} total issues")
+    print(f"DEBUG REPO: Page {page}, page_size {page_size}")
+    print(f"DEBUG REPO: Issues IDs: {[issue.id for issue in all_issues]}")
+    print(f"DEBUG REPO: Issues statuses: {[issue.status for issue in all_issues]}")
+    print(f"DEBUG REPO: Filters applied: {filters}")
+    
+    # Specifičan debug za "Završeno" status
+    completed_issues = [issue for issue in all_issues if issue.status == "Završeno"]
+    print(f"DEBUG REPO: Found {len(completed_issues)} issues with 'Završeno' status")
+    for issue in completed_issues:
+        print(f"DEBUG REPO: Completed issue - ID: {issue.id}, Title: {issue.title}, Status: {issue.status}")
+    
     # Pagination
     issues = all_issues[(page-1)*page_size:page*page_size]
+    print(f"DEBUG REPO: Returning {len(issues)} issues for this page")
+    print(f"DEBUG REPO: Returning issues statuses: {[issue.status for issue in issues]}")
+    
+    # Provjeri da li su "Završeno" issue-i u paginaciji
+    completed_in_page = [issue for issue in issues if issue.status == "Završeno"]
+    print(f"DEBUG REPO: Completed issues in current page: {len(completed_in_page)}")
+    
     return issues, total
 
 def get_user_issue_history_stats(session: Session, user_id: int):
+    from models import Rating
+    from sqlalchemy import func
+    
     # Broj ukupnih prijava
-    total_issues = session.exec(select(func.count(Issue.id)).where(Issue.tenant_id == user_id)).first()
+    total_issues = session.exec(select(func.count(Issue.id)).where(Issue.tenant_id == user_id)).first() or 0
     
     # Broj prijava po statusu
-    status_counts = session.exec(
-        select(Issue.status, func.count(Issue.id))
-        .where(Issue.tenant_id == user_id)
-        .group_by(Issue.status)
-    ).all()
+    completed_issues = session.exec(
+        select(func.count(Issue.id)).where(Issue.tenant_id == user_id, Issue.status == "Završeno")
+    ).first() or 0
+    
+    rejected_issues = session.exec(
+        select(func.count(Issue.id)).where(Issue.tenant_id == user_id, Issue.status == "Otkazano")
+    ).first() or 0
+    
+    in_progress_issues = session.exec(
+        select(func.count(Issue.id)).where(
+            Issue.tenant_id == user_id, 
+            Issue.status.in_(["Dodijeljeno izvođaču", "Na lokaciji", "Popravka u toku", "Čeka dijelove"])
+        )
+    ).first() or 0
     
     # Prosječno vrijeme rješavanja (dani)
     resolved_issues = session.exec(
@@ -133,10 +181,19 @@ def get_user_issue_history_stats(session: Session, user_id: int):
             total_days += 3  # Pretpostavljam prosječno 3 dana
         avg_resolution_time = total_days / len(resolved_issues)
     
+    # Prosječna ocjena
+    avg_rating = session.exec(
+        select(func.avg(Rating.score))
+        .where(Rating.tenant_id == user_id)
+    ).first() or 0
+    
     return {
-        "total_issues": total_issues or 0,
-        "status_counts": dict(status_counts),
-        "avg_resolution_time": round(avg_resolution_time, 1)
+        "totalIssues": total_issues,
+        "completedIssues": completed_issues,
+        "rejectedIssues": rejected_issues,
+        "inProgressIssues": in_progress_issues,
+        "averageResolutionTime": round(avg_resolution_time, 1),
+        "averageRating": round(avg_rating, 2) if avg_rating else 0
     }
 
 def get_issues_for_manager(session: Session, filters: dict, page: int = 1, page_size: int = 10):
@@ -224,13 +281,6 @@ def get_issues_for_manager_simple(session: Session, filters: dict, page: int = 1
             (Issue.location.ilike(search))
         )
     
-    if filters.get("address"):
-        address = f"%{filters['address']}%"
-        statement = statement.join(Issue.tenant).where(User.address.ilike(address))
-    
-    if filters.get("contractor"):
-        contractor = f"%{filters['contractor']}%"
-        statement = statement.join(Issue.assignments).join(Assignment.contractor).where(User.full_name.ilike(contractor))
     
     if filters.get("category"):
         statement = statement.join(Issue.category).where(IssueCategory.name == filters["category"])
@@ -294,7 +344,8 @@ def get_issues_for_manager_complete(session: Session, filters: dict, page: int =
 
     if filters.get("contractor"):
         contractor = f"%{filters['contractor']}%"
-        statement = statement.join(Issue.assignments).join(Assignment.contractor).where(User.full_name.ilike(contractor))
+        # Koristi LEFT JOIN da uključi issue-e bez assignments
+        statement = statement.outerjoin(Issue.assignments).outerjoin(Assignment.contractor).where(User.full_name.ilike(contractor))
 
     if filters.get("category"):
         statement = statement.join(Issue.category).where(IssueCategory.name == filters["category"])

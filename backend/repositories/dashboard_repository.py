@@ -148,9 +148,9 @@ def get_manager_dashboard_stats(session: Session, user_id: int) -> Dict:
     in_progress = session.exec(
         select(func.count(Issue.id)).where(
             or_(
-                Issue.status == "Dodijeljeno",
-                Issue.status == "U toku",
+                Issue.status == "Dodijeljeno izvođaču",
                 Issue.status == "Na lokaciji",
+                Issue.status == "Popravka u toku",
                 Issue.status == "Čeka dijelove"
             )
         )
@@ -238,7 +238,7 @@ def get_manager_recent_issues(session: Session, limit: int = 4) -> List[Dict]:
             "tenant": tenant.full_name if tenant else "Nepoznato",
             "assigned_to": contractor.full_name if contractor else None,
             "created_at": issue.created_at.isoformat(),
-            "priority": getattr(issue, 'priority', 'Srednji')  # Fallback ako nema priority polje
+            "priority": "N/A"  # Issue model nema priority polje
         })
     
     return recent_issues

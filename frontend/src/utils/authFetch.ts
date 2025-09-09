@@ -24,17 +24,13 @@ function showSessionExpiredModal() {
 
 export async function authFetch(input: RequestInfo, init?: RequestInit) {
   const token = localStorage.getItem("auth_token");
-  console.log("authFetch - Token:", token ? "EXISTS" : "NOT FOUND");
-  console.log("authFetch - URL:", input);
   
   const headers = {
     ...(init?.headers || {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  console.log("authFetch - Headers:", headers);
   const response = await fetch(input, { ...init, headers });
-  console.log("authFetch - Response status:", response.status);
 
   if (response.status === 401) {
     // Token je istekao ili neispravan

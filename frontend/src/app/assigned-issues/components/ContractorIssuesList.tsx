@@ -80,7 +80,7 @@ export default function ContractorIssuesList() {
     return assignments.filter(assignment => {
       const matchesSearch = filters.searchTerm === "" || 
         assignment.issue.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        assignment.tenant.full_name.toLowerCase().includes(filters.searchTerm.toLowerCase())
+        (assignment.tenant && assignment.tenant.full_name && assignment.tenant.full_name.toLowerCase().includes(filters.searchTerm.toLowerCase()))
       
       const matchesStatus = filters.status === "" || assignment.status === filters.status
       
@@ -96,7 +96,7 @@ export default function ContractorIssuesList() {
 
   // Group assignments by status
   const assignmentsByStatus = useMemo(() => {
-    const statusCategories = ["Dodijeljeno", "U toku", "Čeka dijelove", "Završeno", "Odbijeno"]
+    const statusCategories = ["Dodijeljeno", "U toku", "Čeka dijelove", "Završeno", "Otkazano"]
     const grouped: Record<string, Assignment[]> = {}
 
     statusCategories.forEach((status) => {
@@ -116,7 +116,7 @@ export default function ContractorIssuesList() {
         return "⏳"
       case "Završeno":
         return "✅"
-      case "Odbijeno":
+      case "Otkazano":
         return "❌"
       default:
         return "📋"
@@ -133,7 +133,7 @@ export default function ContractorIssuesList() {
         return "#F59E0B"
       case "Završeno":
         return "#22C55E"
-      case "Odbijeno":
+      case "Otkazano":
         return "#EF4444"
       default:
         return "#42a5f5"

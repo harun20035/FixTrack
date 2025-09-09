@@ -9,6 +9,7 @@ export interface RoleRequest {
   status: "pending" | "approved" | "rejected"
   motivation: string
   admin_notes?: string
+  cv_file_url?: string
 }
 
 export interface User {

@@ -241,9 +241,6 @@ export default function IssueCard({ issue, isAssigning }: IssueCardProps) {
             <Typography variant="body2" sx={{ color: "#fff", fontWeight: 500 }}>
               {issue.tenant.name}
             </Typography>
-            <Typography variant="body2" sx={{ color: "#b0b0b0", ml: 1 }}>
-              - {issue.tenant.apartment}
-            </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
             <PhoneIcon sx={{ color: "#42a5f5", fontSize: 18, mr: 1 }} />

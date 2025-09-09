@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Query
+from fastapi.responses import FileResponse
 from sqlmodel import Session
 from database import engine
 from services import admin_service, role_request_service, system_settings_service
@@ -6,6 +7,8 @@ from schemas.admin_schema import UserRead, UserUpdate, UserStats
 from schemas.role_request_schema import RoleRequestCreate, RoleRequestUpdate, RoleRequestRead
 from schemas.system_settings_schema import SystemSettingsUpdate, SystemSettingsRead
 from models.role_model import Role
+from models.role_request_model import RoleRequest
+from models.user_model import User
 from typing import List, Optional
 import jwt
 import os
@@ -247,3 +250,47 @@ def update_system_settings(
         return updated_settings
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/api/admin/role-requests/{request_id}/cv")
+def get_role_request_cv(
+    request_id: int,
+    request: Request,
+    session: Session = Depends(get_session)
+):
+    """Dohvati CV za role request (samo admin)"""
+    try:
+        # Provjeri admin prava
+        admin_id = get_current_user_id(request)
+        admin_user = session.get(User, admin_id)
+        if not admin_user or not admin_user.role_id:
+            raise HTTPException(status_code=403, detail="Nedovoljna prava")
+        
+        admin_role = session.get(Role, admin_user.role_id)
+        if not admin_role or "admin" not in admin_role.name.lower():
+            raise HTTPException(status_code=403, detail="Samo admin može pristupiti CV-u")
+        
+        # Dohvati role request
+        role_request = session.get(RoleRequest, request_id)
+        if not role_request:
+            raise HTTPException(status_code=404, detail="Role request nije pronađen")
+        
+        if not role_request.cv_file_url:
+            raise HTTPException(status_code=404, detail="CV nije priložen")
+        
+        # Kreiraj punu putanju do fajla
+        file_path = os.path.join("media", role_request.cv_file_url)
+        
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="CV fajl nije pronađen")
+        
+        # Vrati fajl
+        return FileResponse(
+            path=file_path,
+            media_type="application/pdf",
+            filename=f"cv_{role_request.user_id}.pdf"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Greška pri dohvaćanju CV-a: {str(e)}")

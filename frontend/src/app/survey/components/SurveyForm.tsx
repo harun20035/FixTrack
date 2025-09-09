@@ -216,10 +216,10 @@ export default function SurveyForm() {
         fullWidth
         multiline
         rows={3}
-        label="Predlozi za poboljšanje"
+        label="Prijedlozi za poboljšanje"
         value={formData.suggestions}
         onChange={handleInputChange("suggestions")}
-        helperText="Imate li predloge kako bismo mogli poboljšati uslugu?"
+        helperText="Imate li prijedloge kako bismo mogli poboljšati uslugu?"
         sx={{ mb: 3 }}
       />
 

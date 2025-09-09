@@ -15,7 +15,9 @@ import shutil
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from services import notification_service
+from services.assignment_notification_service import create_new_assignment_notification
 from schemas.notification_schema import NotificationCreate
+from schemas.assignment_notification_schema import AssignmentNotificationCreate
 
 def create_new_issue(session: Session, tenant_id: int, data, images: List[UploadFile]) -> Issue:
     issue = Issue(
@@ -83,18 +85,57 @@ def delete_issue(session: Session, user_id: int, issue_id: int) -> None:
     return repo_delete_issue(session, issue)
 
 def get_user_issue_history(session: Session, user_id: int, filters: dict, page: int = 1, page_size: int = 10):
+    print(f"DEBUG SERVICE: Getting issue history for user {user_id}, page {page}, page_size {page_size}")
+    print(f"DEBUG SERVICE: Filters: {filters}")
+    
     issues, total = repo_get_user_issue_history(session, user_id, filters, page, page_size)
+    print(f"DEBUG SERVICE: Repository returned {len(issues)} issues, total {total}")
+    
     # For each issue, count comments and get rating for that user
     from models import Comment, Rating
     history_issues = []
     for issue in issues:
         comments = session.exec(select(Comment).where(Comment.issue_id == issue.id, Comment.user_id == user_id)).all()
         comments_count = len(comments)
-        rating_obj = session.exec(select(Rating).where(Rating.issue_id == issue.id, Rating.tenant_id == user_id)).first()
-        rating = rating_obj.score if rating_obj else None
+        try:
+            rating_obj = session.exec(select(Rating).where(Rating.issue_id == issue.id, Rating.tenant_id == user_id)).first()
+            print(f"DEBUG: Issue {issue.id} rating_obj: {rating_obj}, type: {type(rating_obj)}")
+            
+            # Handle both direct Rating object and Row tuple
+            if rating_obj:
+                if hasattr(rating_obj, 'score'):
+                    # Direct Rating object
+                    rating = rating_obj.score
+                elif hasattr(rating_obj, '__getitem__') and len(rating_obj) > 0:
+                    # Row tuple - extract the Rating object from the tuple
+                    rating_instance = rating_obj[0]
+                    if hasattr(rating_instance, 'score'):
+                        rating = rating_instance.score
+                    else:
+                        rating = None
+                else:
+                    rating = None
+            else:
+                rating = None
+                
+            print(f"DEBUG: Issue {issue.id} rating: {rating}")
+        except Exception as e:
+            print(f"DEBUG: Error getting rating for issue {issue.id}: {e}")
+            rating = None
         
         # Debug: print the created_at value
         print(f"Issue {issue.id} created_at: {issue.created_at}, type: {type(issue.created_at)}")
+        
+        # Dohvati assignedTo iz assignments relacije
+        assigned_to = None
+        if issue.assignments:
+            # Uzmi prvi assignment (možda treba logika za najnoviji)
+            assignment = issue.assignments[0]
+            if assignment.contractor:
+                assigned_to = {
+                    "id": assignment.contractor.id,
+                    "full_name": assignment.contractor.full_name
+                }
         
         history_issues.append({
             "id": issue.id,
@@ -108,10 +149,19 @@ def get_user_issue_history(session: Session, user_id: int, filters: dict, page: 
             } if issue.category else None,
             "createdAt": issue.created_at.isoformat() if issue.created_at else None,
             "completedAt": None,
-            "assignedTo": getattr(issue, 'assignedTo', None),
+            "assignedTo": assigned_to,
             "commentsCount": comments_count,
             "rating": rating,
         })
+    
+    print(f"DEBUG SERVICE: Returning {len(history_issues)} processed issues")
+    
+    # Debug za "Završeno" issue-e
+    completed_processed = [issue for issue in history_issues if issue.get("status") == "Završeno"]
+    print(f"DEBUG SERVICE: Processed completed issues: {len(completed_processed)}")
+    for issue in completed_processed:
+        print(f"DEBUG SERVICE: Processed completed - ID: {issue['id']}, Title: {issue['title']}, Status: {issue['status']}")
+    
     return history_issues, total
 
 def get_user_issue_history_stats(session: Session, user_id: int):
@@ -269,6 +319,16 @@ def assign_contractor_to_issue(session: Session, user_id: int, issue_id: int, co
         old_status="Primljeno",
         new_status="Dodijeljeno izvođaču",
         changed_by="Upravnik"
+    ))
+    
+    # Kreiraj assignment notifikaciju za izvođača
+    create_new_assignment_notification(session, AssignmentNotificationCreate(
+        contractor_id=contractor_id,
+        assignment_id=assignment.id,
+        issue_id=issue_id,
+        notification_type="new_assignment",
+        assigned_by=user.full_name,
+        message=f"Dobili ste novi zadatak: {issue.title}"
     ))
     
     return {"message": "Izvođač je uspješno dodijeljen prijavi.", "assignment_id": assignment.id, "issue_id": issue_id, "contractor_id": contractor_id}
@@ -469,6 +529,87 @@ def create_issue_note(session: Session, user_id: int, issue_id: int, note: str):
         "admin_id": user_id
     }
 
+def get_issue_notes(session: Session, user_id: int, issue_id: int):
+    """Dohvata sve napomene za određeni issue"""
+    
+    # Provjera da li je korisnik upravnik
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
+    
+    role = session.get(Role, user.role_id)
+    if not role or "upravnik" not in role.name.lower():
+        raise HTTPException(status_code=403, detail="Samo upravnici mogu pristupiti napomenama.")
+    
+    # Provjera da li issue postoji
+    issue = session.get(Issue, issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail="Prijava nije pronađena.")
+    
+    # Dohvati sve napomene za specifičan issue
+    from sqlalchemy.orm import selectinload
+    from sqlmodel import select
+    from models.notes_model import Notes
+    
+    statement = select(Notes).options(
+        selectinload(Notes.user)
+    ).where(
+        Notes.issue_id == issue_id
+    ).order_by(Notes.created_at.desc())
+    
+    notes = list(session.exec(statement))
+    
+    result = []
+    for note in notes:
+        result.append({
+            "id": note.id,
+            "note": note.note,
+            "created_at": note.created_at.isoformat(),
+            "admin": {
+                "id": note.user.id if note.user else None,
+                "full_name": note.user.full_name if note.user else "Nepoznato"
+            } if note.user else None
+        })
+    
+    return result
+
+def create_issue_note(session: Session, user_id: int, issue_id: int, note: str):
+    """Kreira novu napomenu za issue"""
+    
+    # Provjera da li je korisnik upravnik
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
+    
+    role = session.get(Role, user.role_id)
+    if not role or "upravnik" not in role.name.lower():
+        raise HTTPException(status_code=403, detail="Samo upravnici mogu slati napomene.")
+    
+    # Provjera da li issue postoji
+    issue = session.get(Issue, issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail="Prijava nije pronađena.")
+    
+    # Kreiraj napomenu
+    from models.notes_model import Notes
+    
+    new_note = Notes(
+        issue_id=issue_id,
+        user_id=user_id,
+        note=note
+    )
+    
+    session.add(new_note)
+    session.commit()
+    session.refresh(new_note)
+    
+    return {
+        "message": "Napomena je uspješno dodana.",
+        "note_id": new_note.id,
+        "issue_id": issue_id,
+        "user_id": user_id
+    }
+
 def get_other_issues_for_manager(session: Session, user_id: int, filters: dict, page: int = 1, page_size: int = 10):
     """Dohvaća sve issue-e koji NISU 'Primljeno' za upravnike"""
     
@@ -514,3 +655,110 @@ def get_other_issues_for_manager(session: Session, user_id: int, filters: dict, 
         result.append(issue_dict)
 
     return result
+
+def get_issue_completion_data_for_tenant(session: Session, user_id: int, issue_id: int):
+    """Dohvati completion podatke za završeni issue (za stanare)"""
+    
+    # Provjera da li issue postoji i da li pripada korisniku
+    issue = session.get(Issue, issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail="Prijava nije pronađena.")
+    
+    if issue.tenant_id != user_id:
+        raise HTTPException(status_code=403, detail="Nemate dozvolu za pristup ovim podacima.")
+    
+    if issue.status != "Završeno":
+        raise HTTPException(status_code=400, detail="Podaci o završetku su dostupni samo za završene prijave.")
+    
+    # Dohvati assignment za ovaj issue
+    assignment = session.exec(
+        select(Assignment).where(Assignment.issue_id == issue_id)
+    ).first()
+    
+    if not assignment:
+        return {
+            "notes": [],
+            "images": [],
+            "warranty_pdf": None
+        }
+    
+    # Ako je assignment Row objekt, ekstraktuj podatke
+    if hasattr(assignment, '_mapping'):
+        # Row sadrži Assignment objekt pod ključem 'Assignment'
+        assignment_obj = assignment._mapping['Assignment']
+        assignment_id = assignment_obj.id
+        assignment_notes = assignment_obj.notes
+    else:
+        # SQLModel objekt
+        assignment_id = assignment.id
+        assignment_notes = assignment.notes
+    
+    if not assignment_id:
+        return {
+            "notes": [],
+            "images": [],
+            "warranty_pdf": None
+        }
+    
+    completion_dir = f"media/assignments/{assignment_id}/completion"
+    
+    notes = []
+    images = []
+    warranty_pdf = None
+    
+    # Dohvati bilješke iz assignment-a
+    if assignment_notes:
+        notes.append(assignment_notes)
+    
+    # Dohvati slike i PDF iz filesystem-a
+    if os.path.exists(completion_dir):
+        for filename in os.listdir(completion_dir):
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
+                image_path = f"/media/assignments/{assignment_id}/completion/{filename}"
+                images.append(image_path)
+            elif filename.lower().endswith('.pdf') and filename.startswith('warranty_'):
+                pdf_path = f"/media/assignments/{assignment_id}/completion/{filename}"
+                warranty_pdf = pdf_path
+    
+    return {
+        "notes": notes,
+        "images": images,
+        "warranty_pdf": warranty_pdf
+    }
+
+def get_issue_rejection_reason_for_tenant(session: Session, user_id: int, issue_id: int):
+    """Dohvati razlog za odbijanje issue-a (za stanare)"""
+    
+    # Provjera da li issue postoji i da li pripada korisniku
+    issue = session.get(Issue, issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail="Prijava nije pronađena.")
+    
+    if issue.tenant_id != user_id:
+        raise HTTPException(status_code=403, detail="Nemate dozvolu za pristup ovim podacima.")
+    
+    if issue.status != "Odbijeno":
+        raise HTTPException(status_code=400, detail="Razlog za odbijanje je dostupan samo za odbijene prijave.")
+    
+    # Dohvati assignment za ovaj issue
+    assignment = session.exec(
+        select(Assignment).where(Assignment.issue_id == issue_id)
+    ).first()
+    
+    if not assignment:
+        return {
+            "rejection_reason": None
+        }
+    
+    # Ako je assignment Row objekt, ekstraktuj podatke
+    if hasattr(assignment, '_mapping'):
+        # Row sadrži Assignment objekt pod ključem 'Assignment'
+        assignment_obj = assignment._mapping['Assignment']
+        rejection_reason = assignment_obj.rejection_reason
+    else:
+        # SQLModel objekt
+        rejection_reason = assignment.rejection_reason
+    
+    return {
+        "rejection_reason": rejection_reason
+    }

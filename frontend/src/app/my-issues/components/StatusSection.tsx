@@ -48,7 +48,7 @@ export default function StatusSection({ status, issues, count, onStatusChange, o
         return "warning"
       case "Završeno":
         return "success"
-      case "Odbijeno":
+      case "Otkazano":
         return "error"
       default:
         return "default"
@@ -67,7 +67,7 @@ export default function StatusSection({ status, issues, count, onStatusChange, o
         return "⏳"
       case "Završeno":
         return "✅"
-      case "Odbijeno":
+      case "Otkazano":
         return "❌"
       default:
         return "📋"

@@ -24,7 +24,6 @@ export function IssueFilters({ filters, onFilterChange }: IssueFiltersProps) {
       dateFrom: "",
       dateTo: "",
       category: "all",
-      priority: "all",
       address: "",
       contractor: "",
     })
@@ -163,39 +162,6 @@ export function IssueFilters({ filters, onFilterChange }: IssueFiltersProps) {
           </FormControl>
         </Grid>
 
-        {/* Priority */}
-        <Grid item xs={12} md={2}>
-          <FormControl fullWidth>
-            <InputLabel sx={{ color: "#b0b0b0" }}>Prioritet</InputLabel>
-            <Select
-              value={filters.priority}
-              onChange={(e) => onFilterChange({ ...filters, priority: e.target.value })}
-              sx={{
-                backgroundColor: "#2a2a2a",
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#444",
-                },
-                "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#42a5f5",
-                },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#42a5f5",
-                },
-                "& .MuiSelect-icon": {
-                  color: "#b0b0b0",
-                },
-                "& .MuiSelect-select": {
-                  color: "#fff",
-                },
-              }}
-            >
-              <MenuItem value="all">Svi prioriteti</MenuItem>
-              <MenuItem value="visok">Visok</MenuItem>
-              <MenuItem value="srednji">Srednji</MenuItem>
-              <MenuItem value="nizak">Nizak</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
       </Grid>
 
       {/* Second Row */}

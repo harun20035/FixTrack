@@ -4,10 +4,10 @@ export interface HistoryIssue {
   description?: string
   location?: string
   status: string
-  category: string
+  category: string | { id: number; name: string }
   createdAt: string
   completedAt?: string
-  assignedTo?: string | null
+  assignedTo?: string | { id: number; full_name?: string; name?: string } | null
   commentsCount: number
   rating?: number | null
 }

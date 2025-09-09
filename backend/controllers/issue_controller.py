@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, status, UploadFile, File, Form, Request, HTTPException, Query, Body
-from sqlmodel import Session
+from sqlmodel import Session, select
 from database import engine
 from services import issue_service
 from schemas.issue_schema import IssueCreate, IssueRead, IssueCategoryRead, IssueStatusUpdate, HistoryIssue, HistoryStats, HistoryFilterParams, IssueForManager, ContractorAssignmentRequest
+from models.issue_model import Issue
 import jwt
 import os
 from typing import List
@@ -50,6 +51,37 @@ def create_issue(
 def get_categories(session: Session = Depends(get_session)):
     return issue_service.get_categories(session)
 
+@router.get("/issues/{issue_id}/rejection-reason")
+def get_issue_rejection_reason(
+    issue_id: int,
+    request: Request,
+    session: Session = Depends(get_session)
+):
+    """Dohvati razlog otkazivanja issue-a"""
+    user_id = get_current_user_id(request)
+    
+    # Provjeri da li issue pripada korisniku
+    issue = session.get(Issue, issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail="Issue nije pronađen.")
+    
+    if issue.tenant_id != user_id:
+        raise HTTPException(status_code=403, detail="Nemate pristup ovom issue-u.")
+    
+    if issue.status != "Otkazano":
+        raise HTTPException(status_code=400, detail="Issue nije otkazan.")
+    
+    # Dohvati razlog otkazivanja iz assignment-a
+    from models.assignment_model import Assignment
+    assignment = session.exec(
+        select(Assignment).where(Assignment.issue_id == issue_id)
+    ).first()
+    
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment nije pronađen.")
+    
+    return {"rejection_reason": assignment.rejection_reason}
+
 @router.get("/my-issues", response_model=List[IssueRead])
 def get_my_issues(
     request: Request,
@@ -61,6 +93,13 @@ def get_my_issues(
     user_id = get_current_user_id(request)
     filters = {"status": status, "category": category, "search": search}
     issues = issue_service.get_user_issues(session, user_id, filters)
+    
+    # Debug log
+    print(f"DEBUG: get_my_issues for user {user_id}")
+    print(f"DEBUG: Found {len(issues)} issues")
+    for issue in issues:
+        print(f"DEBUG: Issue {issue.id} - Status: {issue.status}, Title: {issue.title}")
+    
     return issues
 
 @router.patch("/issues/{issue_id}/status", response_model=IssueRead)
@@ -268,6 +307,16 @@ def create_admin_note(
     result = issue_service.create_admin_note(session, user_id, tenant_id, note)
     return result
 
+@router.get("/manager/issues/{issue_id}/notes", response_model=List[dict])
+def get_issue_admin_notes(
+    issue_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    user_id = get_current_user_id(request)
+    notes = issue_service.get_issue_notes(session, user_id, issue_id)
+    return notes
+
 @router.post("/manager/issues/{issue_id}/notes", response_model=dict)
 def create_issue_note(
     issue_id: int,
@@ -285,4 +334,32 @@ def create_issue_note(
         result = issue_service.create_issue_note(session, user_id, issue_id, note)
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Greška pri dodavanju napomene: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Greška pri dodavanju napomene: {str(e)}")
+
+@router.get("/issues/{issue_id}/completion-data")
+def get_issue_completion_data(
+    issue_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    """Dohvati completion podatke za završeni issue (za stanare)"""
+    try:
+        user_id = get_current_user_id(request)
+        result = issue_service.get_issue_completion_data_for_tenant(session, user_id, issue_id)
+        return {"success": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/issues/{issue_id}/rejection-reason")
+def get_issue_rejection_reason(
+    issue_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    """Dohvati razlog za odbijanje issue-a (za stanare)"""
+    try:
+        user_id = get_current_user_id(request)
+        result = issue_service.get_issue_rejection_reason_for_tenant(session, user_id, issue_id)
+        return {"success": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) 

@@ -26,10 +26,12 @@ def get_current_user_id(request: Request) -> int:
     except Exception:
         raise HTTPException(status_code=401, detail="Neispravan token.")
 
-@router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(user_data: UserRegister, session: Session = Depends(get_session)):
     user = user_service.register_user(session, user_data.full_name, user_data.email, user_data.password)
-    return user
+    # Generiraj token nakon registracije
+    token = user_service.authenticate_user(session, user_data.email, user_data.password)
+    return {"auth_token": token, "token_type": "bearer", "user": user}
 
 @router.post("/login")
 def login(user_data: UserLogin, session: Session = Depends(get_session)):

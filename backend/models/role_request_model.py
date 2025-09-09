@@ -10,6 +10,7 @@ class RoleRequest(SQLModel, table=True):
     motivation: str
     status: str = Field(default="pending", max_length=20)  # pending, approved, rejected
     admin_notes: Optional[str] = None
+    cv_file_url: Optional[str] = None  # URL do CV fajla
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

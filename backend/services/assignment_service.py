@@ -20,34 +20,26 @@ from datetime import datetime
 
 def get_contractor_assignments(session: Session, contractor_id: int) -> List[dict]:
     """Dohvati sve assignment-e za određenog izvođača"""
-    print(f"DEBUG: Getting assignments for contractor_id: {contractor_id}")
     
     # Dohvati sve assignment-e za izvođača
     assignments = session.exec(
         select(Assignment).where(Assignment.contractor_id == contractor_id)
     ).all()
     
-    print(f"DEBUG: Found {len(assignments)} assignments")
-    
     result = []
     for assignment in assignments:
-        print(f"DEBUG: Processing assignment_id: {assignment.id}, issue_id: {assignment.issue_id}")
-        
         # Dohvati issue sa svim relacijama
         issue_statement = select(Issue).where(Issue.id == assignment.issue_id).options(
             selectinload(Issue.category),
             selectinload(Issue.images)
         )
         issue = session.exec(issue_statement).first()
-        print(f"DEBUG: Issue found: {issue is not None}")
         
         if not issue:
-            print(f"DEBUG: Skipping assignment {assignment.id} - issue not found")
             continue
             
         # Dohvati tenant
         tenant = session.get(User, issue.tenant_id) if issue and issue.tenant_id else None
-        print(f"DEBUG: Tenant found: {tenant is not None}")
         
         try:
             assignment_dict = {
@@ -76,25 +68,20 @@ def get_contractor_assignments(session: Session, contractor_id: int) -> List[dic
                     "images": [
                         {"id": img.id, "image_url": img.image_url} 
                         for img in issue.images
-                    ] if issue.images else []
-                } if issue else None,
-                "tenant": {
-                    "id": tenant.id,
-                    "full_name": tenant.full_name,
-                    "email": tenant.email,
-                    "phone": tenant.phone,
-                    "address": tenant.address
-                } if tenant else None
+                    ] if issue.images else [],
+                    "tenant": {
+                        "id": tenant.id,
+                        "full_name": tenant.full_name,
+                        "email": tenant.email,
+                        "phone": tenant.phone,
+                        "address": tenant.address
+                    } if tenant else None
+                } if issue else None
             }
             result.append(assignment_dict)
-            print(f"DEBUG: Successfully processed assignment {assignment.id}")
         except Exception as e:
-            print(f"DEBUG: Error processing assignment {assignment.id}: {str(e)}")
             continue
     
-    print(f"DEBUG: Returning {len(result)} processed assignments")
-    for i, assignment in enumerate(result):
-        print(f"DEBUG: Assignment {i}: {assignment.get('id')}, Issue: {assignment.get('issue', {}).get('id')}, Tenant: {assignment.get('issue', {}).get('tenant', {}).get('full_name', 'N/A')}")
     return result
 
 def update_assignment_status_service(session: Session, assignment_id: int, contractor_id: int, status: str, notes: Optional[str] = None) -> dict:
@@ -304,4 +291,275 @@ def update_issue_status_by_contractor_service(session: Session, assignment_id: i
         "issue_id": issue.id,
         "old_status": old_status,
         "new_status": new_status
-    } 
+    }
+
+def update_planned_data_service(session: Session, assignment_id: int, contractor_id: int, planned_date: str, estimated_cost: float) -> dict:
+    """Ažuriraj planirani datum i procjenu troškova"""
+    # Provjera da li je korisnik izvođač
+    user = session.get(User, contractor_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
+    
+    role = session.get(Role, user.role_id)
+    if not role or "izvođač" not in role.name.lower():
+        raise HTTPException(status_code=403, detail="Samo izvođači mogu ažurirati planirane podatke.")
+    
+    # Provjera da li assignment pripada ovom izvođaču
+    assignment = session.get(Assignment, assignment_id)
+    if not assignment or assignment.contractor_id != contractor_id:
+        raise HTTPException(status_code=404, detail="Assignment nije pronađen.")
+    
+    # Ažuriraj planirane podatke
+    from datetime import datetime
+    assignment.planned_date = datetime.fromisoformat(planned_date) if planned_date else None
+    assignment.estimated_cost = estimated_cost
+    session.commit()
+    session.refresh(assignment)
+    
+    return {
+        "message": "Planirani podaci su uspješno ažurirani.",
+        "assignment_id": assignment_id,
+        "planned_date": planned_date,
+        "estimated_cost": estimated_cost
+    }
+
+def get_planned_data_service(session: Session, assignment_id: int, contractor_id: int) -> dict:
+    """Dohvati planirani datum i procjenu troškova"""
+    # Provjera da li je korisnik izvođač
+    user = session.get(User, contractor_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
+    
+    role = session.get(Role, user.role_id)
+    if not role or "izvođač" not in role.name.lower():
+        raise HTTPException(status_code=403, detail="Samo izvođači mogu pristupiti planiranim podacima.")
+    
+    # Provjera da li assignment pripada ovom izvođaču
+    assignment = session.get(Assignment, assignment_id)
+    if not assignment or assignment.contractor_id != contractor_id:
+        raise HTTPException(status_code=404, detail="Assignment nije pronađen.")
+    
+    return {
+        "planned_date": assignment.planned_date.isoformat() if assignment.planned_date else None,
+        "estimated_cost": assignment.estimated_cost
+    }
+
+async def upload_completion_data_service(session: Session, assignment_id: int, contractor_id: int, notes: str, images: List[UploadFile], warranty_pdf: UploadFile = None) -> dict:
+    """Upload završnih slika, bilješki i PDF-a za garanciju"""
+    # Provjera da li je korisnik izvođač
+    user = session.get(User, contractor_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
+    
+    role = session.get(Role, user.role_id)
+    if not role or "izvođač" not in role.name.lower():
+        raise HTTPException(status_code=403, detail="Samo izvođači mogu upload-ovati završne podatke.")
+    
+    # Provjera da li assignment pripada ovom izvođaču
+    assignment = session.get(Assignment, assignment_id)
+    if not assignment or assignment.contractor_id != contractor_id:
+        raise HTTPException(status_code=404, detail="Assignment nije pronađen.")
+    
+    # Kreiraj direktorij ako ne postoji
+    upload_dir = f"media/assignments/{assignment_id}/completion"
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    uploaded_images = []
+    warranty_document = None
+    
+    # Upload slika
+    for image in images:
+        if image.content_type and image.content_type.startswith("image/"):
+            file_path = os.path.join(upload_dir, image.filename)
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(image.file, buffer)
+            
+            image_url = f"/media/assignments/{assignment_id}/completion/{image.filename}"
+            uploaded_images.append(image_url)
+    
+    # Upload warranty PDF
+    if warranty_pdf and warranty_pdf.content_type == "application/pdf":
+        warranty_filename = f"warranty_{assignment_id}_{warranty_pdf.filename}"
+        warranty_path = os.path.join(upload_dir, warranty_filename)
+        with open(warranty_path, "wb") as buffer:
+            shutil.copyfileobj(warranty_pdf.file, buffer)
+        
+        warranty_document = {
+            "filename": warranty_filename,
+            "file_url": f"/media/assignments/{assignment_id}/completion/{warranty_filename}"
+        }
+    
+    # Ažuriraj notes u assignment
+    assignment.notes = notes
+    session.commit()
+    
+    return {
+        "message": "Završni podaci su uspješno upload-ovani.",
+        "assignment_id": assignment_id,
+        "notes": notes,
+        "images": uploaded_images,
+        "warranty_document": warranty_document
+    }
+
+def get_completion_data_service(session: Session, assignment_id: int, contractor_id: int) -> dict:
+    """Dohvati završne slike i bilješke"""
+    # Provjera da li je korisnik izvođač
+    user = session.get(User, contractor_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
+    
+    role = session.get(Role, user.role_id)
+    if not role or "izvođač" not in role.name.lower():
+        raise HTTPException(status_code=403, detail="Samo izvođači mogu pristupiti završnim podacima.")
+    
+    # Provjera da li assignment pripada ovom izvođaču
+    assignment = session.get(Assignment, assignment_id)
+    if not assignment or assignment.contractor_id != contractor_id:
+        raise HTTPException(status_code=404, detail="Assignment nije pronađen.")
+    
+    # Dohvati slike i warranty PDF iz direktorija
+    completion_dir = f"media/assignments/{assignment_id}/completion"
+    images = []
+    warranty_document = None
+    
+    if os.path.exists(completion_dir):
+        for filename in os.listdir(completion_dir):
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
+                images.append({
+                    "image_url": f"/media/assignments/{assignment_id}/completion/{filename}",
+                    "filename": filename
+                })
+            elif filename.lower().endswith('.pdf') and filename.startswith('warranty_'):
+                warranty_document = {
+                    "filename": filename,
+                    "file_url": f"/media/assignments/{assignment_id}/completion/{filename}"
+                }
+    
+    return {
+        "notes": assignment.notes,
+        "images": images,
+        "documents": [],  # Za sada prazno, može se proširiti
+        "warranty_document": warranty_document
+    }
+
+def update_cancellation_reason_service(session: Session, assignment_id: int, contractor_id: int, cancellation_reason: str) -> dict:
+    """Ažuriraj razlog otkazivanja"""
+    # Provjera da li je korisnik izvođač
+    user = session.get(User, contractor_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
+    
+    role = session.get(Role, user.role_id)
+    if not role or "izvođač" not in role.name.lower():
+        raise HTTPException(status_code=403, detail="Samo izvođači mogu ažurirati razlog otkazivanja.")
+    
+    # Provjera da li assignment pripada ovom izvođaču
+    assignment = session.get(Assignment, assignment_id)
+    if not assignment or assignment.contractor_id != contractor_id:
+        raise HTTPException(status_code=404, detail="Assignment nije pronađen.")
+    
+    # Ažuriraj razlog otkazivanja
+    assignment.rejection_reason = cancellation_reason
+    session.commit()
+    session.refresh(assignment)
+    
+    return {
+        "message": "Razlog otkazivanja je uspješno ažuriran.",
+        "assignment_id": assignment_id,
+        "cancellation_reason": cancellation_reason
+    }
+
+def get_cancellation_reason_service(session: Session, assignment_id: int, contractor_id: int) -> dict:
+    """Dohvati razlog otkazivanja"""
+    # Provjera da li je korisnik izvođač
+    user = session.get(User, contractor_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
+    
+    role = session.get(Role, user.role_id)
+    if not role or "izvođač" not in role.name.lower():
+        raise HTTPException(status_code=403, detail="Samo izvođači mogu pristupiti razlogu otkazivanja.")
+    
+    # Provjera da li assignment pripada ovom izvođaču
+    assignment = session.get(Assignment, assignment_id)
+    if not assignment or assignment.contractor_id != contractor_id:
+        raise HTTPException(status_code=404, detail="Assignment nije pronađen.")
+    
+    return {
+        "cancellation_reason": assignment.rejection_reason
+    }
+
+def get_completed_issues_service(session: Session, contractor_id: int) -> list:
+    """Dohvati sve završene issue-e za izvođača"""
+    # Provjera da li je korisnik izvođač
+    user = session.get(User, contractor_id)
+    if not user or not hasattr(user, 'role_id'):
+        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
+    
+    role = session.get(Role, user.role_id)
+    if not role or not hasattr(role, 'name') or "izvođač" not in role.name.lower():
+        raise HTTPException(status_code=403, detail="Samo izvođači mogu pristupiti završenim issue-ima.")
+    
+    # Dohvati sve assignments za ovog izvođača sa statusom "Završeno"
+    assignments = session.query(Assignment).options(
+        selectinload(Assignment.issue).selectinload(Issue.category),
+        selectinload(Assignment.issue).selectinload(Issue.tenant)
+    ).filter(
+        Assignment.contractor_id == contractor_id
+    ).all()
+    
+    completed_issues = []
+    
+    for assignment in assignments:
+        if (assignment.issue and 
+            hasattr(assignment.issue, 'status') and 
+            assignment.issue.status == "Završeno"):
+            # Dohvati slike iz direktorija
+            assignment_id = getattr(assignment, 'id', None)
+            if not assignment_id:
+                continue
+            completion_dir = f"media/assignments/{assignment_id}/completion"
+            images = []
+            warranty_document = None
+            
+            if os.path.exists(completion_dir):
+                for filename in os.listdir(completion_dir):
+                    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
+                        images.append(f"/media/assignments/{assignment_id}/completion/{filename}")
+                    elif filename.lower().endswith('.pdf') and filename.startswith('warranty_'):
+                        warranty_document = f"/media/assignments/{assignment_id}/completion/{filename}"
+            
+            # Dohvati tenant podatke
+            tenant_data = None
+            if assignment.issue.tenant and hasattr(assignment.issue.tenant, 'full_name'):
+                tenant_data = {
+                    "name": assignment.issue.tenant.full_name,
+                    "apartment": assignment.issue.tenant.address or "Nepoznato",
+                    "phone": assignment.issue.tenant.phone or "Nepoznato"
+                }
+            
+            # Sigurno pristupanje kategoriji
+            category_name = "ostalo"
+            if assignment.issue.category and hasattr(assignment.issue.category, 'name'):
+                category_name = assignment.issue.category.name.lower()
+            
+            completed_issue = {
+                "id": str(assignment_id),
+                "title": getattr(assignment.issue, 'title', 'Nepoznato'),
+                "description": getattr(assignment.issue, 'description', ''),
+                "category": category_name,
+                "priority": "srednji",  # Default priority, može se dodati u Issue model
+                "tenant": tenant_data,
+                "location": getattr(assignment.issue, 'location', ''),
+                "completed_at": getattr(assignment.issue, 'created_at', assignment.created_at).isoformat(),
+                "notes": [assignment.notes] if getattr(assignment, 'notes', None) else [],
+                "images": images,
+                "warranty_pdf": warranty_document
+            }
+            
+            completed_issues.append(completed_issue)
+    
+    # Sortiraj po datumu završetka (najnoviji prvi)
+    completed_issues.sort(key=lambda x: x["completed_at"], reverse=True)
+    
+    return completed_issues 

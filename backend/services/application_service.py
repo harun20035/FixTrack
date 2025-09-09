@@ -95,13 +95,13 @@ CV/ISKUSTVO: {'Priložen' if file_url else 'Nije priložen'}
     )
     
     try:
-        role_request = create_new_role_request(session, user_id, role_request_data)
+        role_request = create_new_role_request(session, user_id, role_request_data, file_url)
         
         return ApplicationResponse(
             success=True,
             message="Vaša aplikacija za izvođača je uspješno poslana! Admin će pregledati vašu aplikaciju u roku od 3-5 radnih dana.",
             role_request_id=role_request.id,
-            redirect_url="/contractordashboard"
+            redirect_url="/dashboard"
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Greška pri slanju aplikacije: {str(e)}")
@@ -166,13 +166,13 @@ POTVRDA PROMJENE ULOGE: {'Prihvaćeno' if data.accept_role_change else 'Nije pri
     )
     
     try:
-        role_request = create_new_role_request(session, user_id, role_request_data)
+        role_request = create_new_role_request(session, user_id, role_request_data, file_url)
         
         return ApplicationResponse(
             success=True,
             message="Vaša aplikacija za upravnika je uspješno poslana! Admin će pregledati vašu aplikaciju u roku od 3-5 radnih dana.",
             role_request_id=role_request.id,
-            redirect_url="/managerdashboard"
+            redirect_url="/dashboard"
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Greška pri slanju aplikacije: {str(e)}")

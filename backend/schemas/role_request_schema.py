@@ -18,6 +18,7 @@ class RoleRequestRead(BaseModel):
     motivation: str
     status: str
     admin_notes: Optional[str] = None
+    cv_file_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     

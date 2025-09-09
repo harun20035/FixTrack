@@ -89,14 +89,16 @@ export default function AllReports({ recentIssues }: AllReportsProps) {
                     size="small"
                     variant="outlined"
                   />
-                  <Chip
-                    label={report.priority}
-                    size="small"
-                    sx={{
-                      backgroundColor: getPriorityColor(report.priority),
-                      color: "white",
-                    }}
-                  />
+                  {report.priority !== "N/A" && (
+                    <Chip
+                      label={report.priority}
+                      size="small"
+                      sx={{
+                        backgroundColor: getPriorityColor(report.priority),
+                        color: "white",
+                      }}
+                    />
+                  )}
                   <Chip label={report.category} size="small" variant="outlined" sx={{ borderColor: "#42a5f5" }} />
                 </Box>
               </Box>

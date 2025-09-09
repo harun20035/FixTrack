@@ -6,12 +6,13 @@ from models.role_model import Role
 from typing import List, Optional
 from datetime import datetime
 
-def create_role_request(session: Session, user_id: int, current_role_id: int, requested_role_id: int, motivation: str) -> RoleRequest:
+def create_role_request(session: Session, user_id: int, current_role_id: int, requested_role_id: int, motivation: str, cv_file_url: Optional[str] = None) -> RoleRequest:
     role_request = RoleRequest(
         user_id=user_id,
         current_role_id=current_role_id,
         requested_role_id=requested_role_id,
-        motivation=motivation
+        motivation=motivation,
+        cv_file_url=cv_file_url
     )
     session.add(role_request)
     session.commit()

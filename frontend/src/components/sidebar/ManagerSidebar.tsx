@@ -131,6 +131,7 @@ export default function ManagerSidebar({
       <List sx={{ px: 2, py: 1 }}>
         <ListItem disablePadding sx={{ mb: 0.5 }}>
           <ListItemButton
+            onClick={() => router.push("/profile")}
             sx={{
               borderRadius: 2,
               "&:hover": {

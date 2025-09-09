@@ -15,7 +15,6 @@ export function OtherIssuesLayout() {
     dateFrom: "",
     dateTo: "",
     category: "all",
-    priority: "all",
     address: "",
     contractor: "",
   })
@@ -30,7 +29,6 @@ export function OtherIssuesLayout() {
       dateFrom: "",
       dateTo: "",
       category: "all",
-      priority: "all",
       address: "",
       contractor: "",
     })

@@ -88,7 +88,7 @@ export default function IssueFilters({ filters, onFiltersChange }: IssueFiltersP
             <MenuItem value="U toku">U toku</MenuItem>
             <MenuItem value="Čeka dijelove">Čeka dijelove</MenuItem>
             <MenuItem value="Završeno">Završeno</MenuItem>
-            <MenuItem value="Odbijeno">Odbijeno</MenuItem>
+            <MenuItem value="Otkazano">Otkazano</MenuItem>
           </Select>
         </FormControl>
 

@@ -59,9 +59,12 @@ class HistoryIssue(BaseModel):
     rating: float | None = None
 
 class HistoryStats(BaseModel):
-    total_issues: int
-    status_counts: dict
-    avg_resolution_time: float
+    totalIssues: int
+    completedIssues: int
+    rejectedIssues: int
+    inProgressIssues: int
+    averageResolutionTime: float
+    averageRating: float
 
     class Config:
         from_attributes = True

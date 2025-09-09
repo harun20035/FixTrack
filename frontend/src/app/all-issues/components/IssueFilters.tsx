@@ -33,8 +33,6 @@ export default function IssueFilters({ filters, onFilterChange }: IssueFiltersPr
       dateTo: "",
       category: "all",
       priority: "all",
-      address: "",
-      contractor: "",
     }
     setLocalFilters(clearedFilters)
     onFilterChange(clearedFilters)
@@ -160,54 +158,6 @@ export default function IssueFilters({ filters, onFilterChange }: IssueFiltersPr
         </Grid>
       </Grid>
 
-      {/* Second Row */}
-      <Grid container spacing={3} sx={{ mt: 1 }}>
-        {/* Address Search */}
-        <Grid item xs={12} md={4}>
-          <TextField
-            fullWidth
-            label="Pretraži po adresi"
-            value={localFilters.address}
-            onChange={(e) => handleInputChange("address", e.target.value)}
-            InputProps={{
-              startAdornment: <SearchIcon sx={{ color: "#42a5f5", mr: 1 }} />,
-            }}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                backgroundColor: "#2a2a2a",
-                "& fieldset": { borderColor: "#444" },
-                "&:hover fieldset": { borderColor: "#42a5f5" },
-                "&.Mui-focused fieldset": { borderColor: "#42a5f5" },
-              },
-              "& .MuiInputLabel-root": { color: "#b0b0b0" },
-              "& .MuiInputBase-input": { color: "#fff" },
-            }}
-          />
-        </Grid>
-
-        {/* Contractor Search */}
-        <Grid item xs={12} md={4}>
-          <TextField
-            fullWidth
-            label="Pretraži po izvođaču"
-            value={localFilters.contractor}
-            onChange={(e) => handleInputChange("contractor", e.target.value)}
-            InputProps={{
-              startAdornment: <SearchIcon sx={{ color: "#42a5f5", mr: 1 }} />,
-            }}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                backgroundColor: "#2a2a2a",
-                "& fieldset": { borderColor: "#444" },
-                "&:hover fieldset": { borderColor: "#42a5f5" },
-                "&.Mui-focused fieldset": { borderColor: "#42a5f5" },
-              },
-              "& .MuiInputLabel-root": { color: "#b0b0b0" },
-              "& .MuiInputBase-input": { color: "#fff" },
-            }}
-          />
-        </Grid>
-      </Grid>
 
       {/* Clear Filters Button */}
       <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>

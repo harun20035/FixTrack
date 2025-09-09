@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Paper, Typography, Box, Chip, Button, Avatar, Divider, CircularProgress, Alert, Snackbar } from "@mui/material"
+import { Paper, Typography, Box, Chip, Button, Avatar, Divider, CircularProgress, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material"
 import PersonIcon from "@mui/icons-material/Person"
 import CheckIcon from "@mui/icons-material/Check"
 import CloseIcon from "@mui/icons-material/Close"
+import VisibilityIcon from "@mui/icons-material/Visibility"
 import type { RoleRequest } from "../types"
 import { getRoleRequests, updateRoleRequest } from "../../../utils/adminApi"
 
@@ -14,6 +15,8 @@ export default function RoleRequests() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [cvModalOpen, setCvModalOpen] = useState(false)
+  const [selectedCvUrl, setSelectedCvUrl] = useState<string | null>(null)
 
   // Load role requests on component mount
   useEffect(() => {
@@ -65,6 +68,40 @@ export default function RoleRequests() {
     } finally {
       setLoadingId(null)
     }
+  }
+
+  const handleViewCv = async (requestId: number) => {
+    const request = requests.find(req => req.id === requestId)
+    if (request && request.cv_file_url) {
+      try {
+        // Dohvati CV kao blob sa Authorization header-om
+        const response = await fetch(`http://localhost:8000/api/admin/role-requests/${requestId}/cv`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          }
+        })
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch CV')
+        }
+        
+        const blob = await response.blob()
+        const url = URL.createObjectURL(blob)
+        setSelectedCvUrl(url)
+        setCvModalOpen(true)
+      } catch (error) {
+        console.error('Error fetching CV:', error)
+        setError('Greška pri dohvaćanju CV-a')
+      }
+    }
+  }
+
+  const handleCloseCvModal = () => {
+    setCvModalOpen(false)
+    if (selectedCvUrl) {
+      URL.revokeObjectURL(selectedCvUrl)
+    }
+    setSelectedCvUrl(null)
   }
 
   const pendingRequests = requests.filter((req) => req.status === "pending")
@@ -190,35 +227,56 @@ export default function RoleRequests() {
                     </Typography>
                   </Box>
 
-                  <Box sx={{ display: "flex", gap: 1 }}>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      startIcon={loadingId === request.id ? <CircularProgress size={16} /> : <CheckIcon />}
-                      onClick={() => handleApprove(request.id)}
-                      disabled={loadingId === request.id}
-                      sx={{
-                        bgcolor: "#10b981",
-                        "&:hover": { bgcolor: "#059669" },
-                        minWidth: 100,
-                      }}
-                    >
-                      {loadingId === request.id ? "Odobravam..." : "Odobri"}
-                    </Button>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      startIcon={loadingId === request.id ? <CircularProgress size={16} /> : <CloseIcon />}
-                      onClick={() => handleReject(request.id)}
-                      disabled={loadingId === request.id}
-                      sx={{
-                        bgcolor: "#ef4444",
-                        "&:hover": { bgcolor: "#dc2626" },
-                        minWidth: 100,
-                      }}
-                    >
-                      {loadingId === request.id ? "Odbijam..." : "Odbij"}
-                    </Button>
+                  <Box sx={{ display: "flex", gap: 1, flexDirection: "column" }}>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={loadingId === request.id ? <CircularProgress size={16} /> : <CheckIcon />}
+                        onClick={() => handleApprove(request.id)}
+                        disabled={loadingId === request.id}
+                        sx={{
+                          bgcolor: "#10b981",
+                          "&:hover": { bgcolor: "#059669" },
+                          minWidth: 100,
+                        }}
+                      >
+                        {loadingId === request.id ? "Odobravam..." : "Odobri"}
+                      </Button>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={loadingId === request.id ? <CircularProgress size={16} /> : <CloseIcon />}
+                        onClick={() => handleReject(request.id)}
+                        disabled={loadingId === request.id}
+                        sx={{
+                          bgcolor: "#ef4444",
+                          "&:hover": { bgcolor: "#dc2626" },
+                          minWidth: 100,
+                        }}
+                      >
+                        {loadingId === request.id ? "Odbijam..." : "Odbij"}
+                      </Button>
+                    </Box>
+                    {request.cv_file_url && (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<VisibilityIcon />}
+                        onClick={() => handleViewCv(request.id)}
+                        sx={{
+                          borderColor: "#42a5f5",
+                          color: "#42a5f5",
+                          "&:hover": { 
+                            borderColor: "#1976d2",
+                            backgroundColor: "rgba(66, 165, 245, 0.1)"
+                          },
+                          minWidth: 100,
+                        }}
+                      >
+                        Pregledaj CV
+                      </Button>
+                    )}
                   </Box>
                 </Box>
                 {index < pendingRequests.length - 1 && <Divider sx={{ bgcolor: "#333" }} />}
@@ -326,6 +384,47 @@ export default function RoleRequests() {
           {success}
         </Alert>
       </Snackbar>
+
+      {/* CV Modal */}
+      <Dialog
+        open={cvModalOpen}
+        onClose={handleCloseCvModal}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: "#1e1e1e",
+            border: "1px solid #333",
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: "#fff", borderBottom: "1px solid #333" }}>
+          Pregled CV-a
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, height: "80vh" }}>
+          {selectedCvUrl && (
+            <iframe
+              src={selectedCvUrl}
+              width="100%"
+              height="100%"
+              style={{ border: "none" }}
+              title="CV Preview"
+            />
+          )}
+        </DialogContent>
+        <DialogActions sx={{ borderTop: "1px solid #333", p: 2 }}>
+          <Button
+            onClick={handleCloseCvModal}
+            variant="contained"
+            sx={{
+              bgcolor: "#42a5f5",
+              "&:hover": { bgcolor: "#1976d2" }
+            }}
+          >
+            Zatvori
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   )
 }

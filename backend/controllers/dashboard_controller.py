@@ -58,9 +58,14 @@ def get_tenant_dashboard(
     """Dohvaća podatke za tenant dashboard"""
     user_id = get_current_user_id(request)
     
-    # Proverava da li je korisnik tenant
-    if not check_user_role(session, user_id, "stanar"):
-        raise HTTPException(status_code=403, detail="Samo stanari mogu pristupiti tenant dashboard-u.")
+    # Proverava da li je korisnik tenant ili izvođač (jer izvođač može biti i stanar)
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Korisnik nije pronađen.")
+    
+    role = session.get(Role, user.role_id)
+    if not role or ("stanar" not in role.name.lower() and "izvođač" not in role.name.lower()):
+        raise HTTPException(status_code=403, detail="Samo stanari i izvođači mogu pristupiti tenant dashboard-u.")
     
     return get_tenant_dashboard_data(session, user_id)
 

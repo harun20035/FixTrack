@@ -60,7 +60,7 @@ export default function HistoryStats({ filters }: HistoryStatsProps) {
     {
       icon: <CancelIcon sx={{ fontSize: 40, color: "#f44336" }} />,
       value: stats.rejectedIssues,
-      label: "Odbijeno",
+      label: "Otkazano",
       subtitle: stats.totalIssues ? `${((stats.rejectedIssues / stats.totalIssues) * 100).toFixed(1)}% odbačeno` : "",
       color: "#f44336",
     },

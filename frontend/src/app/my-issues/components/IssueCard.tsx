@@ -32,6 +32,7 @@ import Image from "next/image";
 import { authFetch } from "../../../utils/authFetch";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
+import DescriptionIcon from "@mui/icons-material/Description";
 import Rating from "@mui/material/Rating";
 
 const IssueCardStyled = styled(Card)(() => ({
@@ -86,6 +87,18 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
   const [newRatingComment, setNewRatingComment] = useState("");
   const [addRatingLoading, setAddRatingLoading] = useState(false);
   const [addRatingError, setAddRatingError] = useState("");
+  const [completionDataOpen, setCompletionDataOpen] = useState(false);
+  const [completionData, setCompletionData] = useState<{
+    notes: string[];
+    images: string[];
+    warrantyPdf: string | null;
+  }>({ notes: [], images: [], warrantyPdf: null });
+  const [completionDataLoading, setCompletionDataLoading] = useState(false);
+  const [completionDataError, setCompletionDataError] = useState("");
+  const [rejectionReasonOpen, setRejectionReasonOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [rejectionReasonLoading, setRejectionReasonLoading] = useState(false);
+  const [rejectionReasonError, setRejectionReasonError] = useState("");
 
   // Fetch categories when edit dialog opens
   useEffect(() => {
@@ -135,6 +148,26 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
       setRatingError((e as Error).message);
     } finally {
       setRatingLoading(false);
+    }
+  };
+
+  // Fetch completion data
+  const fetchCompletionData = async () => {
+    setCompletionDataLoading(true);
+    setCompletionDataError("");
+    try {
+      const res = await authFetch(`http://localhost:8000/api/issues/${issue.id}/completion-data`);
+      if (!res.ok) throw new Error("Greška prilikom dohvata podataka o završetku.");
+      const data = await res.json();
+      setCompletionData({
+        notes: data.data.notes || [],
+        images: data.data.images || [],
+        warrantyPdf: data.data.warranty_pdf || null
+      });
+    } catch (e) {
+      setCompletionDataError((e as Error).message);
+    } finally {
+      setCompletionDataLoading(false);
     }
   };
 
@@ -230,6 +263,33 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
     }
   };
 
+  const handleOpenCompletionData = () => {
+    setCompletionDataOpen(true);
+    fetchCompletionData();
+  };
+  const handleCloseCompletionData = () => setCompletionDataOpen(false);
+
+  const fetchRejectionReason = async () => {
+    setRejectionReasonLoading(true);
+    setRejectionReasonError("");
+    try {
+      const res = await authFetch(`http://localhost:8000/api/issues/${issue.id}/rejection-reason`);
+      if (!res.ok) throw new Error("Greška prilikom dohvata razloga za odbijanje.");
+      const data = await res.json();
+      setRejectionReason(data.rejection_reason);
+    } catch (e) {
+      setRejectionReasonError((e as Error).message);
+    } finally {
+      setRejectionReasonLoading(false);
+    }
+  };
+
+  const handleOpenRejectionReason = () => {
+    setRejectionReasonOpen(true);
+    fetchRejectionReason();
+  };
+  const handleCloseRejectionReason = () => setRejectionReasonOpen(false);
+
   const getCategoryColor = (category: string) => {
     switch (category) {
       case "Vodoinstalacije":
@@ -261,7 +321,7 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
     })
   }
 
-  const availableStatuses = ["Primljeno", "Dodijeljeno", "U toku", "Čeka dijelove", "Završeno", "Odbijeno"].filter(
+  const availableStatuses = ["Primljeno", "Dodijeljeno", "U toku", "Čeka dijelove", "Završeno", "Otkazano"].filter(
     (status) => status !== issue.status,
   )
 
@@ -420,15 +480,39 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
             </Box>
           )}
           {issue.status === "Završeno" && (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<StarBorderIcon />}
-              onClick={handleOpenRating}
-              sx={{ color: "#ffb300", borderColor: "#ffb300" }}
-            >
-              Ocjena
-            </Button>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<StarBorderIcon />}
+                onClick={handleOpenRating}
+                sx={{ color: "#ffb300", borderColor: "#ffb300" }}
+              >
+                Ocjena
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ImageIcon />}
+                onClick={handleOpenCompletionData}
+                sx={{ color: "#4caf50", borderColor: "#4caf50" }}
+              >
+                Pregled završetka
+              </Button>
+            </Box>
+          )}
+          {issue.status === "Otkazano" && (
+            <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<DescriptionIcon />}
+                onClick={handleOpenRejectionReason}
+                sx={{ color: "#f44336", borderColor: "#f44336" }}
+              >
+                Razlog odbijanja
+              </Button>
+            </Box>
           )}
         </Box>
 
@@ -644,6 +728,119 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
           <Button onClick={handleAddRating} variant="contained" disabled={addRatingLoading || !newRating}>
             Sačuvaj
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Completion Data Modal */}
+      <Dialog open={completionDataOpen} onClose={handleCloseCompletionData} maxWidth="md" fullWidth>
+        <DialogTitle>Podaci o završetku radova</DialogTitle>
+        <DialogContent dividers sx={{ minHeight: 400 }}>
+          {completionDataLoading ? (
+            <Typography color="primary">Učitavanje podataka...</Typography>
+          ) : completionDataError ? (
+            <Typography color="error">{completionDataError}</Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              {/* Bilješke */}
+              {completionData.notes.length > 0 && (
+                <Box>
+                  <Typography variant="h6" color="primary" gutterBottom sx={{ fontWeight: 600 }}>
+                    Bilješke izvođača
+                  </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    {completionData.notes.map((note, index) => (
+                      <Box key={index} sx={{ p: 2, background: "#232323", borderRadius: 2 }}>
+                        <Typography variant="body2" color="text.secondary">{note}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              {/* Slike */}
+              {completionData.images.length > 0 && (
+                <Box>
+                  <Typography variant="h6" color="primary" gutterBottom sx={{ fontWeight: 600 }}>
+                    Slike završenih radova ({completionData.images.length})
+                  </Typography>
+                  <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 2 }}>
+                    {completionData.images.map((image, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          position: "relative",
+                          aspectRatio: "1",
+                          borderRadius: 2,
+                          overflow: "hidden",
+                          cursor: "pointer",
+                          "&:hover": { opacity: 0.8 }
+                        }}
+                        onClick={() => handleOpenGallery(index)}
+                      >
+                        <Image
+                          src={`http://localhost:8000${image}`}
+                          alt={`Slika završenih radova ${index + 1}`}
+                          fill
+                          style={{ objectFit: "cover" }}
+                          unoptimized
+                        />
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              {/* Garancija PDF */}
+              {completionData.warrantyPdf && (
+                <Box>
+                  <Typography variant="h6" color="primary" gutterBottom sx={{ fontWeight: 600 }}>
+                    Garancija
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    startIcon={<DescriptionIcon />}
+                    onClick={() => window.open(`http://localhost:8000${completionData.warrantyPdf}`, "_blank")}
+                    sx={{ color: "#42a5f5", borderColor: "#42a5f5" }}
+                  >
+                    Pregled garancije (PDF)
+                  </Button>
+                </Box>
+              )}
+
+              {/* Empty state */}
+              {completionData.notes.length === 0 && completionData.images.length === 0 && !completionData.warrantyPdf && (
+                <Typography color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
+                  Nema dostupnih podataka o završetku radova.
+                </Typography>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCompletionData}>Zatvori</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Rejection Reason Modal */}
+      <Dialog open={rejectionReasonOpen} onClose={handleCloseRejectionReason} maxWidth="md" fullWidth>
+        <DialogTitle>Razlog za odbijanje prijave</DialogTitle>
+        <DialogContent dividers sx={{ minHeight: 200 }}>
+          {rejectionReasonLoading ? (
+            <Typography color="primary">Učitavanje razloga za odbijanje...</Typography>
+          ) : rejectionReasonError ? (
+            <Typography color="error">{rejectionReasonError}</Typography>
+          ) : rejectionReason ? (
+            <Box sx={{ p: 2, background: "#232323", borderRadius: 2 }}>
+              <Typography variant="body1" color="text.secondary">{rejectionReason}</Typography>
+            </Box>
+          ) : (
+            <Typography color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
+              Nema dostupnog razloga za odbijanje.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseRejectionReason}>Zatvori</Button>
         </DialogActions>
       </Dialog>
     </IssueCardStyled>

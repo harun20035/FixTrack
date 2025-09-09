@@ -108,7 +108,7 @@ export default function ContractorIssueCard({ assignment, onStatusChange }: Cont
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
-          onStatusChange(assignment.id, "Odbijeno")
+          onStatusChange(assignment.id, "Otkazano")
           setRejectDialogOpen(false)
           setRejectionData({ rejection_reason: "" })
         }
@@ -154,7 +154,7 @@ export default function ContractorIssueCard({ assignment, onStatusChange }: Cont
         return "#F59E0B"
       case "Završeno":
         return "#22C55E"
-      case "Odbijeno":
+      case "Otkazano":
         return "#EF4444"
       default:
         return "#42a5f5"
@@ -186,8 +186,8 @@ export default function ContractorIssueCard({ assignment, onStatusChange }: Cont
     })
   }
 
-  const canChangeStatus = assignment.status !== "Završeno" && assignment.status !== "Odbijeno"
-  const canReject = assignment.status !== "Završeno" && assignment.status !== "Odbijeno"
+  const canChangeStatus = assignment.status !== "Završeno" && assignment.status !== "Otkazano"
+  const canReject = assignment.status !== "Završeno" && assignment.status !== "Otkazano"
   const canUpdateCost = assignment.status === "Završeno"
 
   return (
@@ -236,26 +236,28 @@ export default function ContractorIssueCard({ assignment, onStatusChange }: Cont
           )}
 
           {/* Tenant Info */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <PersonIcon sx={{ fontSize: 16, color: "#42a5f5" }} />
-              <Typography variant="body2" color="text.secondary">
-                {assignment.tenant.full_name}
-              </Typography>
+          {assignment.tenant && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <PersonIcon sx={{ fontSize: 16, color: "#42a5f5" }} />
+                <Typography variant="body2" color="text.secondary">
+                  {assignment.tenant.full_name || "Nepoznato"}
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <PhoneIcon sx={{ fontSize: 16, color: "#42a5f5" }} />
+                <Typography variant="body2" color="text.secondary">
+                  {assignment.tenant.phone || "Nepoznato"}
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <EmailIcon sx={{ fontSize: 16, color: "#42a5f5" }} />
+                <Typography variant="body2" color="text.secondary">
+                  {assignment.tenant.email || "Nepoznato"}
+                </Typography>
+              </Box>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <PhoneIcon sx={{ fontSize: 16, color: "#42a5f5" }} />
-              <Typography variant="body2" color="text.secondary">
-                {assignment.tenant.phone}
-              </Typography>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <EmailIcon sx={{ fontSize: 16, color: "#42a5f5" }} />
-              <Typography variant="body2" color="text.secondary">
-                {assignment.tenant.email}
-              </Typography>
-            </Box>
-          </Box>
+          )}
 
           {/* Details */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 3 }}>

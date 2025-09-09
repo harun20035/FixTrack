@@ -106,7 +106,7 @@ export default function SurveyPage() {
               Prijava Nezadovoljstva
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Vaše mišljenje je važno za nas. Molimo vas da podijelite svoje iskustvo i pomognete nam da poboljšamo kvalitet usluge.
+              Vaše mišljenje je važno za nas. Molimo vas da podijelite svoje iskustvo i pomognete nam da poboljšamo kvalitet usluge. 
             </Typography>
           </Box>
 

@@ -37,7 +37,7 @@ export interface Assignment {
   created_at: string
   updated_at: string
   issue: Issue
-  tenant: Tenant
+  tenant?: Tenant
 }
 
 export interface AssignmentImage {

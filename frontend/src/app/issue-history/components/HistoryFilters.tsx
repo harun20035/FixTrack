@@ -53,7 +53,7 @@ export default function HistoryFilters({ filters, setFilters }: HistoryFiltersPr
     "Ostalo",
   ]
 
-  const statuses = ["Primljeno", "Dodijeljeno", "U toku", "Čeka dijelove", "Završeno", "Odbijeno"]
+  const statuses = ["Primljeno", "Dodijeljeno", "U toku", "Čeka dijelove", "Završeno", "Otkazano"]
 
   const sortOptions = [
     { value: "created_at_desc", label: "Najnovije prvo" },

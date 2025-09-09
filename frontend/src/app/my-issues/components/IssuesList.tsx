@@ -85,7 +85,16 @@ export default function IssuesList() {
     setIssues((prev) => prev.map((issue) => (issue.id === updatedIssue.id ? updatedIssue : issue)));
   };
 
-  const statuses = ["Primljeno", "Dodijeljeno", "U toku", "Čeka dijelove", "Završeno", "Odbijeno"]
+  const statuses = ["Primljeno", "Dodijeljeno", "U toku", "Čeka dijelove", "Završeno", "Otkazano"]
+  
+  // Debug log za provjeru issue-ova
+  console.log("All issues:", issues);
+  console.log("Filtered issues:", filteredIssues);
+  console.log("Issues by status:", statuses.map(status => ({
+    status,
+    count: filteredIssues.filter(issue => issue.status === status).length,
+    issues: filteredIssues.filter(issue => issue.status === status)
+  })));
 
   if (loading) return (
     <Box sx={{ minHeight: "40vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
