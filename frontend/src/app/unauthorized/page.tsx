@@ -2,12 +2,20 @@
 import { useRouter } from "next/navigation"
 import { Box, Paper, Typography, Button, Container } from "@mui/material"
 import { Lock, Home } from "@mui/icons-material"
+import { getCurrentUserRole, getDashboardRoute } from "@/utils/roleUtils"
 
 export default function UnauthorizedPage() {
   const router = useRouter()
 
   const handleGoToDashboard = () => {
-    router.push("/dashboard")
+    const userRole = getCurrentUserRole()
+    if (userRole) {
+      const dashboardRoute = getDashboardRoute(userRole)
+      router.push(dashboardRoute)
+    } else {
+      // Fallback ako nema role
+      router.push("/dashboard")
+    }
   }
 
   return (

@@ -4,6 +4,7 @@ import Box from "@mui/material/Box"
 import AssignmentNotificationsLayout from "./components/AssignmentNotificationsLayout"
 import AssignmentNotificationFilters from "./components/AssignmentNotificationFilters"
 import AssignmentNotificationsList from "./components/AssignmentNotificationsList"
+import ProtectedRoute from "@/components/ProtectedRoute"
 import { useEffect, useState, useCallback } from "react"
 import { authFetch } from "../../utils/authFetch"
 import type { AssignmentNotification } from "./types"
@@ -53,24 +54,26 @@ export default function AssignmentNotificationsPage() {
   if (filter === "read") filteredNotifications = notifications.filter((n) => n.isRead)
 
   return (
-    <AssignmentNotificationsLayout>
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <AssignmentNotificationFilters
-            filter={filter}
-            setFilter={setFilter}
-            counts={counts}
-            onMarkAllAsRead={handleMarkAllAsRead}
-            loading={loading}
-          />
-          <AssignmentNotificationsList
-            notifications={filteredNotifications}
-            loading={loading}
-            error={error}
-            setNotifications={setNotifications}
-          />
-        </Box>
-      </Container>
-    </AssignmentNotificationsLayout>
+    <ProtectedRoute>
+      <AssignmentNotificationsLayout>
+        <Container maxWidth="md" sx={{ py: 4 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <AssignmentNotificationFilters
+              filter={filter}
+              setFilter={setFilter}
+              counts={counts}
+              onMarkAllAsRead={handleMarkAllAsRead}
+              loading={loading}
+            />
+            <AssignmentNotificationsList
+              notifications={filteredNotifications}
+              loading={loading}
+              error={error}
+              setNotifications={setNotifications}
+            />
+          </Box>
+        </Container>
+      </AssignmentNotificationsLayout>
+    </ProtectedRoute>
   )
 }

@@ -33,6 +33,7 @@ def get_issues_for_user(session: Session, user_id: int, filters: Dict = {}) -> L
             (Issue.description.ilike(search)) |
             (Issue.location.ilike(search))
         )
+    
     return list(session.exec(statement))
 
 def update_issue_status(session: Session, issue_id: int, new_status: str) -> Issue:

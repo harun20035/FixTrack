@@ -10,6 +10,7 @@ import ManagerQuickActions from "./components/ManagerQuickActions"
 import ManagerStatsCards from "./components/ManagerStatsCards"
 import AllReports from "./components/AllReports"
 import SystemOverview from "./components/SystemOverview"
+import ProtectedRoute from "@/components/ProtectedRoute"
 import { getManagerDashboard, ManagerDashboardData } from "../../utils/dashboardApi"
 
 export default function ManagerDashboard() {
@@ -71,39 +72,41 @@ export default function ManagerDashboard() {
   }
 
   return (
-    <ManagerDashboardLayout>
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" color="primary" gutterBottom sx={{ fontWeight: 600 }}>
-            Upravnik Dashboard
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Dobrodošli nazad! Evo pregleda svih prijava kvarova i aktivnosti u zgradama.
-          </Typography>
-        </Box>
+    <ProtectedRoute>
+      <ManagerDashboardLayout>
+        <Container maxWidth="xl" sx={{ py: 4 }}>
+          {/* Header */}
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" color="primary" gutterBottom sx={{ fontWeight: 600 }}>
+              Upravnik Dashboard
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Dobrodošli nazad! Evo pregleda svih prijava kvarova i aktivnosti u zgradama.
+            </Typography>
+          </Box>
 
-        {/* Quick Actions */}
-        <ManagerQuickActions />
+          {/* Quick Actions */}
+          <ManagerQuickActions />
 
-        {/* Stats Cards */}
-        <ManagerStatsCards stats={dashboardData.stats} />
+          {/* Stats Cards */}
+          <ManagerStatsCards stats={dashboardData.stats} />
 
-        {/* Main Content Grid */}
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "1fr",
-              lg: "2fr 1fr",
-            },
-            gap: 4,
-          }}
-        >
-          <AllReports recentIssues={dashboardData.recent_issues} />
-          <SystemOverview stats={dashboardData.stats} />
-        </Box>
-      </Container>
-    </ManagerDashboardLayout>
+          {/* Main Content Grid */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                lg: "2fr 1fr",
+              },
+              gap: 4,
+            }}
+          >
+            <AllReports recentIssues={dashboardData.recent_issues} />
+            <SystemOverview stats={dashboardData.stats} />
+          </Box>
+        </Container>
+      </ManagerDashboardLayout>
+    </ProtectedRoute>
   )
 }

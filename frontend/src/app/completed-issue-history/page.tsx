@@ -1,5 +1,11 @@
+"use client"
 import CompletedIssueHistoryLayout from "./components/CompletedIssueHistoryLayout"
+import ProtectedRoute from "@/components/ProtectedRoute"
 
 export default function CompletedIssueHistoryPage() {
-  return <CompletedIssueHistoryLayout />
+  return (
+    <ProtectedRoute>
+      <CompletedIssueHistoryLayout />
+    </ProtectedRoute>
+  )
 }

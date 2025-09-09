@@ -1,7 +1,12 @@
 "use client"
 
 import AdminLayout from "./components/AdminLayout"
+import ProtectedRoute from "@/components/ProtectedRoute"
 
 export default function AdminPage() {
-  return <AdminLayout />
+  return (
+    <ProtectedRoute>
+      <AdminLayout />
+    </ProtectedRoute>
+  )
 }

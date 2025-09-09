@@ -10,6 +10,7 @@ import Alert from "@mui/material/Alert";
 import Header from "../../components/header/Header";
 import Footer from "../../components/footer/Footer";
 import CircularProgress from "@mui/material/CircularProgress";
+import { getRoleIdFromToken, getDashboardRoute } from "@/utils/roleUtils";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -60,29 +61,6 @@ export default function LoginPage() {
     }
   }
 
-  function getDashboardRoute(roleId: number): string {
-    switch (roleId) {
-      case 1: // Stanar
-        return "/dashboard";
-      case 2: // Upravnik
-        return "/managerdashboard";
-      case 3: // Izvođač
-        return "/dashboard";
-      case 4: // Administrator
-        return "/admin";
-      default:
-        return "/dashboard";
-    }
-  }
-
-  function getRoleIdFromToken(token: string): number | null {
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      return payload.role_id || null;
-    } catch (e) {
-      return null;
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -64,6 +64,8 @@ export default function ManagerSidebar({
       router.push("/all-issues")
     } else if (text.trim().toLowerCase() === "sve prijave - ostalo") {
       router.push("/other-issues")
+    } else if (text.trim().toLowerCase() === "stanari") {
+      router.push("/tenants")
     }
   }
 

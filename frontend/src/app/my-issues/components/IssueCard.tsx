@@ -99,6 +99,10 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [rejectionReasonLoading, setRejectionReasonLoading] = useState(false);
   const [rejectionReasonError, setRejectionReasonError] = useState("");
+  const [managerNotesOpen, setManagerNotesOpen] = useState(false);
+  const [managerNotes, setManagerNotes] = useState<{ id: number; note: string; created_at: string; admin: { id: number; full_name: string } }[]>([]);
+  const [managerNotesLoading, setManagerNotesLoading] = useState(false);
+  const [managerNotesError, setManagerNotesError] = useState("");
 
   // Fetch categories when edit dialog opens
   useEffect(() => {
@@ -289,6 +293,28 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
     fetchRejectionReason();
   };
   const handleCloseRejectionReason = () => setRejectionReasonOpen(false);
+
+  // Fetch manager notes
+  const fetchManagerNotes = async () => {
+    setManagerNotesLoading(true);
+    setManagerNotesError("");
+    try {
+      const res = await authFetch(`http://localhost:8000/api/issues/${issue.id}/notes`);
+      if (!res.ok) throw new Error("Greška prilikom dohvata napomena upravnika.");
+      const data = await res.json();
+      setManagerNotes(data);
+    } catch (e) {
+      setManagerNotesError((e as Error).message);
+    } finally {
+      setManagerNotesLoading(false);
+    }
+  };
+
+  const handleOpenManagerNotes = () => {
+    setManagerNotesOpen(true);
+    fetchManagerNotes();
+  };
+  const handleCloseManagerNotes = () => setManagerNotesOpen(false);
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -518,6 +544,11 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
 
         {/* Status Change Menu */}
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+          <MenuItem onClick={() => { handleOpenManagerNotes(); handleMenuClose(); }}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Pregledaj napomene
+            </Typography>
+          </MenuItem>
           {issue.status === "Primljeno" && (
             <MenuItem onClick={() => { handleOpenAddComment(); handleMenuClose(); }}>
               <Typography variant="subtitle2" color="text.secondary">
@@ -841,6 +872,43 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseRejectionReason}>Zatvori</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Manager Notes Modal */}
+      <Dialog open={managerNotesOpen} onClose={handleCloseManagerNotes} maxWidth="md" fullWidth>
+        <DialogTitle>Napomene upravnika</DialogTitle>
+        <DialogContent dividers sx={{ minHeight: 300 }}>
+          {managerNotesLoading ? (
+            <Typography color="primary">Učitavanje napomena...</Typography>
+          ) : managerNotesError ? (
+            <Typography color="error">{managerNotesError}</Typography>
+          ) : managerNotes.length === 0 ? (
+            <Typography color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
+              Nema napomena upravnika za ovu prijavu.
+            </Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {managerNotes.map((note) => (
+                <Box key={note.id} sx={{ p: 2, background: "#232323", borderRadius: 2 }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                    <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>
+                      {note.admin?.full_name || "Upravnik"}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(note.created_at).toLocaleString("bs-BA")}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    {note.note}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseManagerNotes}>Zatvori</Button>
         </DialogActions>
       </Dialog>
     </IssueCardStyled>

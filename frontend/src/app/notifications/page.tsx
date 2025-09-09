@@ -4,6 +4,7 @@ import Box from "@mui/material/Box"
 import NotificationsLayout from "./components/NotificationsLayout"
 import NotificationFilters from "./components/NotificationFilters"
 import NotificationsList from "./components/NotificationsList"
+import ProtectedRoute from "@/components/ProtectedRoute"
 import { useEffect, useState, useCallback } from "react"
 import { authFetch } from "../../utils/authFetch"
 import type { Notification } from "./types"
@@ -83,24 +84,26 @@ export default function NotificationsPage() {
   if (filter === "read") filteredNotifications = notifications.filter((n) => n.isRead)
 
   return (
-    <NotificationsLayout>
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <NotificationFilters
-            filter={filter}
-            setFilter={setFilter}
-            counts={counts}
-            onMarkAllAsRead={handleMarkAllAsRead}
-            loading={loading}
-          />
-          <NotificationsList
-            notifications={filteredNotifications}
-            loading={loading}
-            error={error}
-            setNotifications={setNotifications}
-          />
-        </Box>
-      </Container>
-    </NotificationsLayout>
+    <ProtectedRoute>
+      <NotificationsLayout>
+        <Container maxWidth="md" sx={{ py: 4 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <NotificationFilters
+              filter={filter}
+              setFilter={setFilter}
+              counts={counts}
+              onMarkAllAsRead={handleMarkAllAsRead}
+              loading={loading}
+            />
+            <NotificationsList
+              notifications={filteredNotifications}
+              loading={loading}
+              error={error}
+              setNotifications={setNotifications}
+            />
+          </Box>
+        </Container>
+      </NotificationsLayout>
+    </ProtectedRoute>
   )
 }

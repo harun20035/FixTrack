@@ -573,6 +573,45 @@ def get_issue_notes(session: Session, user_id: int, issue_id: int):
     
     return result
 
+def get_issue_notes_for_tenant(session: Session, user_id: int, issue_id: int):
+    """Dohvata napomene upravnika za određeni issue - dostupno stanarima"""
+    
+    # Provjera da li issue postoji i da li pripada korisniku
+    issue = session.get(Issue, issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail="Prijava nije pronađena.")
+    
+    # Provjera da li je korisnik vlasnik issue-a
+    if issue.tenant_id != user_id:
+        raise HTTPException(status_code=403, detail="Nemate pristup napomenama za ovu prijavu.")
+    
+    # Dohvati sve napomene za specifičan issue
+    from sqlalchemy.orm import selectinload
+    from sqlmodel import select
+    from models.notes_model import Notes
+    
+    statement = select(Notes).options(
+        selectinload(Notes.user)
+    ).where(
+        Notes.issue_id == issue_id
+    ).order_by(Notes.created_at.desc())
+    
+    notes = list(session.exec(statement))
+    
+    result = []
+    for note in notes:
+        result.append({
+            "id": note.id,
+            "note": note.note,
+            "created_at": note.created_at.isoformat(),
+            "admin": {
+                "id": note.user.id if note.user else None,
+                "full_name": note.user.full_name if note.user else "Nepoznato"
+            } if note.user else None
+        })
+    
+    return result
+
 def create_issue_note(session: Session, user_id: int, issue_id: int, note: str):
     """Kreira novu napomenu za issue"""
     

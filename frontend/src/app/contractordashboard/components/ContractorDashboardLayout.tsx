@@ -9,9 +9,7 @@ import IconButton from "@mui/material/IconButton"
 import MenuIcon from "@mui/icons-material/Menu"
 import DashboardIcon from "@mui/icons-material/Dashboard"
 import AssignmentIcon from "@mui/icons-material/Assignment"
-import NewReleasesIcon from "@mui/icons-material/NewReleases"
 import HistoryIcon from "@mui/icons-material/History"
-import FolderIcon from "@mui/icons-material/Folder"
 import NotificationsIcon from "@mui/icons-material/Notifications"
 import { useRouter, usePathname } from "next/navigation"
 import ContractorSidebar, { drawerWidth, type MenuItem } from "../../../components/sidebar/ContractorSidebar"
@@ -30,7 +28,12 @@ export default function ContractorDashboardLayout({ children }: ContractorDashbo
   }
 
   const handleLogout = () => {
-    router.push("/")
+    // Clear authentication data
+    localStorage.removeItem("auth_token")
+    localStorage.removeItem("auth_token_exp")
+    
+    // Redirect to login page
+    router.push("/login")
   }
 
   const handleBack = () => {
@@ -38,12 +41,10 @@ export default function ContractorDashboardLayout({ children }: ContractorDashbo
   }
 
   const menuItems: MenuItem[] = [
-    { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard/contractordashboard" },
-    { text: "Dodijeljene Prijave", icon: <AssignmentIcon />, path: "/dashboard/contractordashboard/assigned" },
-    { text: "Nova Zaduženja", icon: <NewReleasesIcon />, path: "/dashboard/contractordashboard/new-tasks" },
-    { text: "Historija", icon: <HistoryIcon />, path: "/dashboard/contractordashboard/history" },
-    { text: "Dokumentacija", icon: <FolderIcon />, path: "/dashboard/contractordashboard/documents" },
-    { text: "Notifikacije", icon: <NotificationsIcon />, path: "/dashboard/contractordashboard/notifications" },
+    { text: "Dashboard", icon: <DashboardIcon />, path: "/contractordashboard" },
+    { text: "Dodijeljene Prijave", icon: <AssignmentIcon />, path: "/my-assigned-issues" },
+    { text: "Notifikacije", icon: <NotificationsIcon />, path: "/assignment-notifications" },
+    { text: "Historija", icon: <HistoryIcon />, path: "/completed-issue-history" },
   ]
 
   return (

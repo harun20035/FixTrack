@@ -85,7 +85,7 @@ export default function IssuesList() {
     setIssues((prev) => prev.map((issue) => (issue.id === updatedIssue.id ? updatedIssue : issue)));
   };
 
-  const statuses = ["Primljeno", "Dodijeljeno", "U toku", "Čeka dijelove", "Završeno", "Otkazano"]
+  const statuses = ["Primljeno", "Dodijeljeno izvođaču", "U toku", "Čeka dijelove", "Završeno", "Otkazano"]
   
   // Debug log za provjeru issue-ova
   console.log("All issues:", issues);

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Grid, Typography, Box, CircularProgress, Alert } from "@mui/material"
+import { Typography, Box, CircularProgress, Alert } from "@mui/material"
 import TenantCard from "./TenantCard"
 import { authFetch } from "@/utils/authFetch"
 import type { Tenant } from "../types"
@@ -81,12 +81,10 @@ export default function TenantsList({ searchTerm }: TenantsListProps) {
   }
 
   return (
-    <Grid container spacing={3}>
+    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" }, gap: 3 }}>
       {filteredTenants.map((tenant) => (
-        <Grid item xs={12} md={6} key={tenant.id}>
-          <TenantCard tenant={tenant} />
-        </Grid>
+        <TenantCard key={tenant.id} tenant={tenant} />
       ))}
-    </Grid>
+    </Box>
   )
 }

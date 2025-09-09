@@ -9,13 +9,8 @@ import IconButton from "@mui/material/IconButton"
 import MenuIcon from "@mui/icons-material/Menu"
 import DashboardIcon from "@mui/icons-material/Dashboard"
 import ListAltIcon from "@mui/icons-material/ListAlt"
-import AssignmentIndIcon from "@mui/icons-material/AssignmentInd"
 import ListIcon from "@mui/icons-material/List"
-import BarChartIcon from "@mui/icons-material/BarChart"
 import PeopleIcon from "@mui/icons-material/People"
-import BuildIcon from "@mui/icons-material/Build"
-import ChatIcon from "@mui/icons-material/Chat"
-import NotificationsIcon from "@mui/icons-material/Notifications"
 import { useRouter, usePathname } from "next/navigation"
 import ManagerSidebar, {
   drawerWidth,
@@ -37,18 +32,19 @@ export default function ManagerDashboardLayout({ children }: ManagerDashboardLay
   }
 
   const handleLogout = () => {
-    router.push("/")
+    // Clear authentication data
+    localStorage.removeItem("auth_token")
+    localStorage.removeItem("auth_token_exp")
+    
+    // Redirect to login page
+    router.push("/login")
   }
 
   const menuItems: MenuItem[] = [
     { text: "Dashboard", icon: <DashboardIcon />, path: "/managerdashboard" },
     { text: "Sve Prijave - Primljeno", icon: <ListAltIcon />, path: "/all-issues" },
     { text: "Sve Prijave - Ostalo", icon: <ListIcon />, path: "/other-issues" },
-    { text: "Statistike", icon: <BarChartIcon />, path: "/managerdashboard/statistics" },
-    { text: "Stanari", icon: <PeopleIcon />, path: "/managerdashboard/tenants" },
-    { text: "Izvođači", icon: <BuildIcon />, path: "/managerdashboard/contractors" },
-    { text: "Komunikacija", icon: <ChatIcon />, path: "/managerdashboard/communication" },
-    { text: "Notifikacije", icon: <NotificationsIcon />, path: "/managerdashboard/notifications" },
+    { text: "Stanari", icon: <PeopleIcon />, path: "/tenants" },
   ]
 
   const userInfo: UserInfo = {

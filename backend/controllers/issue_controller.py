@@ -93,13 +93,6 @@ def get_my_issues(
     user_id = get_current_user_id(request)
     filters = {"status": status, "category": category, "search": search}
     issues = issue_service.get_user_issues(session, user_id, filters)
-    
-    # Debug log
-    print(f"DEBUG: get_my_issues for user {user_id}")
-    print(f"DEBUG: Found {len(issues)} issues")
-    for issue in issues:
-        print(f"DEBUG: Issue {issue.id} - Status: {issue.status}, Title: {issue.title}")
-    
     return issues
 
 @router.patch("/issues/{issue_id}/status", response_model=IssueRead)
@@ -315,6 +308,17 @@ def get_issue_admin_notes(
 ):
     user_id = get_current_user_id(request)
     notes = issue_service.get_issue_notes(session, user_id, issue_id)
+    return notes
+
+@router.get("/issues/{issue_id}/notes", response_model=List[dict])
+def get_issue_notes_for_tenant(
+    issue_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    """Dohvata napomene upravnika za određeni issue - dostupno stanarima"""
+    user_id = get_current_user_id(request)
+    notes = issue_service.get_issue_notes_for_tenant(session, user_id, issue_id)
     return notes
 
 @router.post("/manager/issues/{issue_id}/notes", response_model=dict)

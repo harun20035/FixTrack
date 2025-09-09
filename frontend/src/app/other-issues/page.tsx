@@ -1,6 +1,11 @@
 "use client"
 import { OtherIssuesLayout } from "./components/OtherIssuesLayout"
+import ProtectedRoute from "@/components/ProtectedRoute"
 
 export default function OtherIssuesPage() {
-  return <OtherIssuesLayout />
+  return (
+    <ProtectedRoute>
+      <OtherIssuesLayout />
+    </ProtectedRoute>
+  )
 }

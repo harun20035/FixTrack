@@ -1,5 +1,6 @@
 "use client"
 import type React from "react"
+import { useRouter } from "next/navigation"
 
 import Box from "@mui/material/Box"
 import Drawer from "@mui/material/Drawer"
@@ -40,6 +41,11 @@ export default function ContractorSidebar({
   onLogout,
   onBack,
 }: ContractorSidebarProps) {
+  const router = useRouter()
+
+  const handleMenuClick = (path: string) => {
+    router.push(path)
+  }
   const drawer = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Back Button */}
@@ -63,6 +69,7 @@ export default function ContractorSidebar({
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
+              onClick={() => handleMenuClick(item.path)}
               sx={{
                 borderRadius: 2,
                 "&:hover": {
@@ -96,6 +103,7 @@ export default function ContractorSidebar({
       <List sx={{ px: 2, py: 1 }}>
         <ListItem disablePadding sx={{ mb: 0.5 }}>
           <ListItemButton
+            onClick={() => handleMenuClick("/profile")}
             sx={{
               borderRadius: 2,
               "&:hover": {
