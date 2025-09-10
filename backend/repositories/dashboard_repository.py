@@ -143,9 +143,9 @@ def get_manager_dashboard_stats(session: Session, user_id: int) -> Dict:
         select(func.count(Issue.id)).where(Issue.status == "Primljeno")
     ).first() or 0
     
-    # Prijave u toku (samo status "U toku")
+    # Prijave u toku (samo status "Popravka u toku")
     in_progress = session.exec(
-        select(func.count(Issue.id)).where(Issue.status == "U toku")
+        select(func.count(Issue.id)).where(Issue.status == "Popravka u toku")
     ).first() or 0
     
     # Ukupno završene prijave
@@ -229,7 +229,7 @@ def get_contractor_dashboard_stats(session: Session, user_id: int) -> Dict:
             and_(
                 Assignment.contractor_id == user_id,
                 or_(
-                    Issue.status == "U toku",
+                    Issue.status == "Popravka u toku",
                     Issue.status == "Čeka dijelove"
                 )
             )
@@ -305,14 +305,14 @@ def get_contractor_recent_activities(session: Session, user_id: int, limit: int 
                 "timestamp": issue.created_at.isoformat() if issue.created_at else assignment.updated_at.isoformat(),
                 "status": "Završeno"
             })
-        elif issue.status == "U toku":
+        elif issue.status == "Popravka u toku":
             activities.append({
                 "id": issue.id,
                 "type": "started",
                 "title": f"Početa popravka - {issue.title}",
                 "description": f"Započeta popravka u {issue.location or 'lokaciji'}",
                 "timestamp": assignment.updated_at.isoformat(),
-                "status": "U toku"
+                "status": "Popravka u toku"
             })
         elif issue.status == "Na lokaciji":
             activities.append({

@@ -47,7 +47,7 @@ export default function ManagerStatsCards({ stats }: ManagerStatsCardsProps) {
     {
       icon: <BuildIcon sx={{ fontSize: 40, color: "#f44336", mb: 2 }} />,
       value: (stats.in_progress ?? 0).toString(),
-      label: "U Toku",
+      label: "Popravka u toku",
       subtitle: "Aktivni zadaci",
       color: "#f44336",
     },

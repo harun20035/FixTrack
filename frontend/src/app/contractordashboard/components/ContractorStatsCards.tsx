@@ -40,7 +40,7 @@ export default function ContractorStatsCards({ stats }: ContractorStatsCardsProp
     {
       icon: <BuildIcon sx={{ fontSize: 40, color: "#f44336", mb: 2 }} />,
       value: stats.in_progress.toString(),
-      label: "U Toku",
+      label: "Popravka u toku",
       color: "#f44336",
     },
     {

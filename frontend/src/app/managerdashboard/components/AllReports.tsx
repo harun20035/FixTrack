@@ -44,7 +44,7 @@ export default function AllReports({ recentIssues }: AllReportsProps) {
         return "info"
       case "Dodijeljeno":
         return "secondary"
-      case "U toku":
+      case "Popravka u toku":
         return "primary"
       case "Čeka dijelove":
         return "warning"

@@ -101,19 +101,25 @@ def update_assignment_status_service(session: Session, assignment_id: int, contr
         raise HTTPException(status_code=404, detail="Assignment nije pronađen.")
     
     # Validacija statusa
-    valid_statuses = ["Dodijeljeno", "U toku", "Čeka dijelove", "Završeno", "Odbijeno"]
+    valid_statuses = ["Dodijeljeno", "Popravka u toku", "Čeka dijelove", "Završeno", "Odbijeno"]
     if status not in valid_statuses:
         raise HTTPException(status_code=400, detail="Nevažeći status.")
     
     # Ažuriraj status
     updated_assignment = update_assignment_status(session, assignment_id, status, notes)
     
-    # Ako je status završeno, ažuriraj i issue status
-    if status == "Završeno":
-        issue = session.get(Issue, assignment.issue_id)
-        if issue:
+    # Ažuriraj i issue status na osnovu assignment statusa
+    issue = session.get(Issue, assignment.issue_id)
+    if issue:
+        if status == "Popravka u toku":
+            issue.status = "Popravka u toku"
+        elif status == "Čeka dijelove":
+            issue.status = "Čeka dijelove"
+        elif status == "Završeno":
             issue.status = "Završeno"
-            session.commit()
+        elif status == "Odbijeno":
+            issue.status = "Otkazano"
+        session.commit()
     
     return {
         "message": "Status je uspješno ažuriran.",

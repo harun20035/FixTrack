@@ -92,7 +92,7 @@ export default function SystemOverview({ stats }: SystemOverviewProps) {
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <BuildIcon sx={{ fontSize: 20, color: "#f44336" }} />
-                <Typography variant="body2">U toku</Typography>
+                <Typography variant="body2">Popravka u toku</Typography>
               </Box>
               <Chip label={stats.in_progress ?? 0} color="error" size="small" />
             </Box>

@@ -42,7 +42,7 @@ export default function RecentActivity({ recentActivities }: RecentActivityProps
     switch (status) {
       case "Završeno":
         return "success"
-      case "U toku":
+      case "Popravka u toku":
         return "primary"
       case "Na lokaciji":
         return "warning"
