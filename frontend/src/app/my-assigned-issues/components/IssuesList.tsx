@@ -59,9 +59,6 @@ export default function IssuesList({ filters }: IssuesListProps) {
   }, [])
 
   const filteredAssignments = useMemo(() => {
-    console.log("🔍 Filtering assignments with filters:", filters)
-    console.log("📊 Total assignments:", assignments.length)
-    
     return assignments.filter((assignment) => {
       const issue = assignment.issue
       if (!issue) return false
@@ -77,16 +74,6 @@ export default function IssuesList({ filters }: IssuesListProps) {
 
       const matchesDateFrom = !filters.dateFrom || issue.created_at >= filters.dateFrom
       const matchesDateTo = !filters.dateTo || issue.created_at <= filters.dateTo
-
-      // Debug log za status
-      if (filters.status) {
-        console.log(`🔍 Status filter: "${filters.status}" vs Issue status: "${issue.status}" - Match: ${matchesStatus}`)
-      }
-
-      // Debug log za lokaciju
-      if (filters.location) {
-        console.log(`🔍 Location filter: "${filters.location}" vs Issue location: "${issue.location}" - Match: ${matchesLocation}`)
-      }
 
       return matchesSearch && matchesLocation && matchesStatus && matchesDateFrom && matchesDateTo
     })

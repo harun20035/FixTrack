@@ -55,18 +55,6 @@ export default function AllReports({ recentIssues }: AllReportsProps) {
     }
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "Visok":
-        return "#f44336"
-      case "Srednji":
-        return "#ff9800"
-      case "Nizak":
-        return "#4caf50"
-      default:
-        return "#42a5f5"
-    }
-  }
 
   return (
     <Box>
@@ -89,17 +77,6 @@ export default function AllReports({ recentIssues }: AllReportsProps) {
                     size="small"
                     variant="outlined"
                   />
-                  {report.priority !== "N/A" && (
-                    <Chip
-                      label={report.priority}
-                      size="small"
-                      sx={{
-                        backgroundColor: getPriorityColor(report.priority),
-                        color: "white",
-                      }}
-                    />
-                  )}
-                  <Chip label={report.category} size="small" variant="outlined" sx={{ borderColor: "#42a5f5" }} />
                 </Box>
               </Box>
             </Box>

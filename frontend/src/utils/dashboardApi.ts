@@ -32,9 +32,7 @@ export interface ManagerStats {
   total_issues: number
   pending_assignment: number
   in_progress: number
-  completed_this_month: number
-  average_resolution_time: number
-  success_rate: number
+  completed_total: number
 }
 
 export interface ManagerIssue {
@@ -43,11 +41,9 @@ export interface ManagerIssue {
   description: string
   location: string
   status: string
-  category: string
   tenant: string
   assigned_to?: string
   created_at: string
-  priority: string
 }
 
 export interface ManagerDashboardData {
@@ -60,9 +56,7 @@ export interface ContractorStats {
   assigned_issues: number
   on_location: number
   in_progress: number
-  completed_this_month: number
-  average_resolution_time: number
-  monthly_earnings: number
+  completed_total: number
 }
 
 export interface ContractorIssue {
@@ -71,11 +65,8 @@ export interface ContractorIssue {
   description: string
   location: string
   status: string
-  category: string
   assigned_at: string
-  estimated_cost?: number
   planned_date?: string
-  priority: string
 }
 
 export interface ContractorActivity {
@@ -85,7 +76,6 @@ export interface ContractorActivity {
   description: string
   timestamp: string
   status?: string
-  amount?: number
 }
 
 export interface ContractorDashboardData {

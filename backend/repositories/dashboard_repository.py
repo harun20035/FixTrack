@@ -133,10 +133,9 @@ def get_tenant_recent_issues(session: Session, user_id: int, limit: int = 3) -> 
 def get_manager_dashboard_stats(session: Session, user_id: int) -> Dict:
     """Dohvaća statistike za manager dashboard"""
     
-    # Ukupno prijava ovaj mjesec
-    current_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    # Ukupno prijava za sve vrijeme
     total_issues = session.exec(
-        select(func.count(Issue.id)).where(Issue.created_at >= current_month)
+        select(func.count(Issue.id))
     ).first() or 0
     
     # Prijave koje čekaju dodjelu
@@ -144,60 +143,21 @@ def get_manager_dashboard_stats(session: Session, user_id: int) -> Dict:
         select(func.count(Issue.id)).where(Issue.status == "Primljeno")
     ).first() or 0
     
-    # Prijave u toku
+    # Prijave u toku (samo status "U toku")
     in_progress = session.exec(
-        select(func.count(Issue.id)).where(
-            or_(
-                Issue.status == "Dodijeljeno izvođaču",
-                Issue.status == "Na lokaciji",
-                Issue.status == "Popravka u toku",
-                Issue.status == "Čeka dijelove"
-            )
-        )
+        select(func.count(Issue.id)).where(Issue.status == "U toku")
     ).first() or 0
     
-    # Završene prijave ovaj mjesec
-    completed_this_month = session.exec(
-        select(func.count(Issue.id)).where(
-            and_(
-                Issue.status == "Završeno",
-                Issue.created_at >= current_month
-            )
-        )
+    # Ukupno završene prijave
+    completed_total = session.exec(
+        select(func.count(Issue.id)).where(Issue.status == "Završeno")
     ).first() or 0
-    
-    # Prosječno vrijeme rješavanja
-    avg_resolution_time = 0
-    completed_issues = session.exec(
-        select(Issue).where(
-            and_(
-                Issue.status == "Završeno",
-                Issue.created_at.isnot(None),
-                Issue.created_at >= current_month
-            )
-        )
-    ).all()
-    
-    if completed_issues:
-        total_days = 0
-        for issue in completed_issues:
-            if issue.created_at:
-                days = (datetime.utcnow() - issue.created_at).days
-                total_days += days
-        avg_resolution_time = total_days / len(completed_issues)
-    
-    # Stopa uspješnosti (završene vs ukupne prijave ovaj mjesec)
-    success_rate = 0
-    if total_issues > 0:
-        success_rate = (completed_this_month / total_issues) * 100
     
     return {
         "total_issues": total_issues,
         "pending_assignment": pending_assignment,
         "in_progress": in_progress,
-        "completed_this_month": completed_this_month,
-        "average_resolution_time": round(avg_resolution_time, 1),
-        "success_rate": round(success_rate, 1)
+        "completed_total": completed_total
     }
 
 def get_manager_recent_issues(session: Session, limit: int = 4) -> List[Dict]:
@@ -234,11 +194,9 @@ def get_manager_recent_issues(session: Session, limit: int = 4) -> List[Dict]:
             "description": issue.description or "",
             "location": issue.location or "",
             "status": issue.status,
-            "category": category.name if category else "Nepoznato",
             "tenant": tenant.full_name if tenant else "Nepoznato",
             "assigned_to": contractor.full_name if contractor else None,
-            "created_at": issue.created_at.isoformat(),
-            "priority": "N/A"  # Issue model nema priority polje
+            "created_at": issue.created_at.isoformat()
         })
     
     return recent_issues
@@ -278,52 +236,23 @@ def get_contractor_dashboard_stats(session: Session, user_id: int) -> Dict:
         )
     ).first() or 0
     
-    # Završene prijave ovaj mjesec
-    current_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    completed_this_month = session.exec(
+    # Ukupno završene prijave
+    completed_total = session.exec(
         select(func.count(Assignment.id))
         .join(Issue, Issue.id == Assignment.issue_id)
         .where(
             and_(
                 Assignment.contractor_id == user_id,
-                Issue.status == "Završeno",
-                Issue.created_at >= current_month
+                Issue.status == "Završeno"
             )
         )
     ).first() or 0
-    
-    # Prosječno vrijeme rješavanja
-    avg_resolution_time = 0
-    completed_assignments = session.exec(
-        select(Assignment, Issue)
-        .join(Issue, Issue.id == Assignment.issue_id)
-        .where(
-            and_(
-                Assignment.contractor_id == user_id,
-                Issue.status == "Završeno",
-                Issue.created_at >= current_month
-            )
-        )
-    ).all()
-    
-    if completed_assignments:
-        total_days = 0
-        for assignment, issue in completed_assignments:
-            if issue.created_at and assignment.created_at:
-                days = (datetime.utcnow() - assignment.created_at).days
-                total_days += days
-        avg_resolution_time = total_days / len(completed_assignments)
-    
-    # Mjesečna zarada (pretpostavka: 100 KM po završenoj prijavi)
-    monthly_earnings = completed_this_month * 100
     
     return {
         "assigned_issues": assigned_issues,
         "on_location": on_location,
         "in_progress": in_progress,
-        "completed_this_month": completed_this_month,
-        "average_resolution_time": round(avg_resolution_time, 1),
-        "monthly_earnings": monthly_earnings
+        "completed_total": completed_total
     }
 
 def get_contractor_assigned_issues(session: Session, user_id: int, limit: int = 3) -> List[Dict]:
@@ -346,11 +275,8 @@ def get_contractor_assigned_issues(session: Session, user_id: int, limit: int = 
             "description": issue.description or "",
             "location": issue.location or "",
             "status": issue.status,
-            "category": issue.category.name if issue.category else "Nepoznato",
             "assigned_at": assignment.created_at.isoformat(),
-            "estimated_cost": assignment.estimated_cost,
-            "planned_date": assignment.planned_date.isoformat() if assignment.planned_date else None,
-            "priority": "Srednji"  # Fallback jer Issue model nema priority polje
+            "planned_date": assignment.planned_date.isoformat() if assignment.planned_date else None
         })
     
     return assigned_issues
@@ -377,8 +303,7 @@ def get_contractor_recent_activities(session: Session, user_id: int, limit: int 
                 "title": f"Popravka završena - {issue.title}",
                 "description": f"Uspješno završena popravka u {issue.location or 'lokaciji'}",
                 "timestamp": issue.created_at.isoformat() if issue.created_at else assignment.updated_at.isoformat(),
-                "status": "Završeno",
-                "amount": assignment.estimated_cost or 100
+                "status": "Završeno"
             })
         elif issue.status == "U toku":
             activities.append({

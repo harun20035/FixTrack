@@ -29,9 +29,7 @@ class ManagerStats(BaseModel):
     total_issues: int
     pending_assignment: int
     in_progress: int
-    completed_this_month: int
-    average_resolution_time: float
-    success_rate: float
+    completed_total: int
 
 class ManagerIssue(BaseModel):
     id: int
@@ -39,11 +37,9 @@ class ManagerIssue(BaseModel):
     description: str
     location: str
     status: str
-    category: str
     tenant: str
     assigned_to: Optional[str] = None
     created_at: str
-    priority: str
 
 class ManagerDashboardResponse(BaseModel):
     stats: ManagerStats
@@ -54,9 +50,7 @@ class ContractorStats(BaseModel):
     assigned_issues: int
     on_location: int
     in_progress: int
-    completed_this_month: int
-    average_resolution_time: float
-    monthly_earnings: float
+    completed_total: int
 
 class ContractorIssue(BaseModel):
     id: int
@@ -64,11 +58,8 @@ class ContractorIssue(BaseModel):
     description: str
     location: str
     status: str
-    category: str
     assigned_at: str
-    estimated_cost: Optional[float] = None
     planned_date: Optional[str] = None
-    priority: str
 
 class ContractorActivity(BaseModel):
     id: int
@@ -77,7 +68,6 @@ class ContractorActivity(BaseModel):
     description: str
     timestamp: str
     status: Optional[str] = None
-    amount: Optional[float] = None
 
 class ContractorDashboardResponse(BaseModel):
     stats: ContractorStats

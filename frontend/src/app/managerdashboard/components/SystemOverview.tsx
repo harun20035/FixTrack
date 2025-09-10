@@ -11,6 +11,8 @@ import BuildIcon from "@mui/icons-material/Build"
 import HomeIcon from "@mui/icons-material/Home"
 import PendingIcon from "@mui/icons-material/Pending"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
+import AssignmentIcon from "@mui/icons-material/Assignment"
+import LocationOnIcon from "@mui/icons-material/LocationOn"
 import { ManagerStats } from "../../../utils/dashboardApi"
 
 const OverviewCard = styled(Card)(({ theme }) => ({
@@ -25,31 +27,39 @@ const OverviewCard = styled(Card)(({ theme }) => ({
 }))
 
 interface SystemOverviewProps {
-  stats: ManagerStats
+  stats: ManagerStats | null
 }
 
 export default function SystemOverview({ stats }: SystemOverviewProps) {
+  // Provjeri da li stats postoji
+  if (!stats) {
+    return null
+  }
+
+  // Izračunaj procenat završenih
+  const completionRate = stats.total_issues > 0 ? Math.round((stats.completed_total / stats.total_issues) * 100) : 0
+
   return (
     <Box>
       <Typography variant="h5" color="primary" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
         Pregled Sistema
       </Typography>
 
-      {/* Monthly Performance */}
+      {/* Ukupna Performansa */}
       <OverviewCard>
         <CardContent sx={{ p: 3 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
             <TrendingUpIcon sx={{ color: "#42a5f5" }} />
             <Typography variant="h6" color="primary" sx={{ fontWeight: 600 }}>
-              Mjesečna Performansa
+              Ukupna Performansa
             </Typography>
           </Box>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Riješeno {stats.completed_this_month} od {stats.total_issues} prijava
+            Završeno {stats.completed_total} od {stats.total_issues} prijava
           </Typography>
           <LinearProgress
             variant="determinate"
-            value={stats.success_rate}
+            value={completionRate}
             sx={{
               height: 8,
               borderRadius: 4,
@@ -60,12 +70,12 @@ export default function SystemOverview({ stats }: SystemOverviewProps) {
             }}
           />
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: "right" }}>
-            {stats.success_rate}% uspješnost
+            {completionRate}% završeno
           </Typography>
         </CardContent>
       </OverviewCard>
 
-      {/* Current Status Overview */}
+      {/* Trenutno Stanje */}
       <OverviewCard>
         <CardContent sx={{ p: 3 }}>
           <Typography variant="h6" color="primary" gutterBottom sx={{ fontWeight: 600 }}>
@@ -77,28 +87,27 @@ export default function SystemOverview({ stats }: SystemOverviewProps) {
                 <PendingIcon sx={{ fontSize: 20, color: "#ff9800" }} />
                 <Typography variant="body2">Na čekanju</Typography>
               </Box>
-              <Chip label={stats.pending_assignment} color="warning" size="small" />
+              <Chip label={stats.pending_assignment ?? 0} color="warning" size="small" />
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <BuildIcon sx={{ fontSize: 20, color: "#f44336" }} />
                 <Typography variant="body2">U toku</Typography>
               </Box>
-              <Chip label={stats.in_progress} color="error" size="small" />
+              <Chip label={stats.in_progress ?? 0} color="error" size="small" />
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <CheckCircleIcon sx={{ fontSize: 20, color: "#4caf50" }} />
-                <Typography variant="body2">Završeno ovaj mjesec</Typography>
+                <Typography variant="body2">Ukupno završeno</Typography>
               </Box>
-              <Chip label={stats.completed_this_month} color="success" size="small" />
+              <Chip label={stats.completed_total ?? 0} color="success" size="small" />
             </Box>
           </Box>
         </CardContent>
       </OverviewCard>
 
-
-      {/* Quick Stats */}
+      {/* Brze Statistike */}
       <OverviewCard>
         <CardContent sx={{ p: 3 }}>
           <Typography variant="h6" color="primary" gutterBottom sx={{ fontWeight: 600 }}>
@@ -106,19 +115,19 @@ export default function SystemOverview({ stats }: SystemOverviewProps) {
           </Typography>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Box sx={{ textAlign: "center" }}>
-              <Typography variant="h4" color="#4caf50" sx={{ fontWeight: 700 }}>
-                {stats.average_resolution_time}
+              <Typography variant="h4" color="#42a5f5" sx={{ fontWeight: 700 }}>
+                {stats.total_issues ?? 0}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Prosječno vrijeme (dani)
+                Ukupno prijava
               </Typography>
             </Box>
             <Box sx={{ textAlign: "center" }}>
-              <Typography variant="h4" color="#ff9800" sx={{ fontWeight: 700 }}>
-                {stats.success_rate}%
+              <Typography variant="h4" color="#4caf50" sx={{ fontWeight: 700 }}>
+                {completionRate}%
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Stopa uspješnosti
+                Procenat završenih
               </Typography>
             </Box>
           </Box>

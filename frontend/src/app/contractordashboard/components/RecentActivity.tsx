@@ -8,7 +8,6 @@ import { styled } from "@mui/material/styles"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import BuildIcon from "@mui/icons-material/Build"
 import LocationOnIcon from "@mui/icons-material/LocationOn"
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney"
 import { ContractorActivity } from "../../../utils/dashboardApi"
 
 const ActivityCard = styled(Card)(({ theme }) => ({
@@ -34,8 +33,6 @@ export default function RecentActivity({ recentActivities }: RecentActivityProps
         return <BuildIcon sx={{ color: "#42a5f5" }} />
       case "arrived":
         return <LocationOnIcon sx={{ color: "#ff9800" }} />
-      case "estimate":
-        return <AttachMoneyIcon sx={{ color: "#ffc107" }} />
       default:
         return <BuildIcon sx={{ color: "#42a5f5" }} />
     }
@@ -99,17 +96,6 @@ export default function RecentActivity({ recentActivities }: RecentActivityProps
                       variant="outlined"
                     />
                   )}
-                  {activity.amount && (
-                    <Chip
-                      label={`${activity.amount} KM`}
-                      size="small"
-                      sx={{
-                        backgroundColor: "#ffc107",
-                        color: "#000",
-                        fontWeight: 600,
-                      }}
-                    />
-                  )}
                 </Box>
               </Box>
             </Box>
@@ -117,21 +103,6 @@ export default function RecentActivity({ recentActivities }: RecentActivityProps
         </ActivityCard>
       ))}
 
-      {/* View All Button */}
-      <Box sx={{ textAlign: "center", mt: 2 }}>
-        <Typography
-          variant="body2"
-          sx={{
-            color: "#42a5f5",
-            cursor: "pointer",
-            "&:hover": {
-              textDecoration: "underline",
-            },
-          }}
-        >
-          Pogledaj svu aktivnost →
-        </Typography>
-      </Box>
     </Box>
   )
 }

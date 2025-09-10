@@ -23,9 +23,7 @@ export function IssueFilters({ filters, onFilterChange }: IssueFiltersProps) {
       searchTerm: "",
       dateFrom: "",
       dateTo: "",
-      category: "all",
-      address: "",
-      contractor: "",
+      location: "",
     })
   }
 
@@ -33,6 +31,7 @@ export function IssueFilters({ filters, onFilterChange }: IssueFiltersProps) {
     <Box>
       <Grid container spacing={3}>
         {/* Search */}
+        {/* @ts-ignore */}
         <Grid item xs={12} md={4}>
           <TextField
             fullWidth
@@ -64,6 +63,7 @@ export function IssueFilters({ filters, onFilterChange }: IssueFiltersProps) {
         </Grid>
 
         {/* Date From */}
+        {/* @ts-ignore */}
         <Grid item xs={12} md={2}>
           <TextField
             fullWidth
@@ -96,6 +96,7 @@ export function IssueFilters({ filters, onFilterChange }: IssueFiltersProps) {
         </Grid>
 
         {/* Date To */}
+        {/* @ts-ignore */}
         <Grid item xs={12} md={2}>
           <TextField
             fullWidth
@@ -127,52 +128,14 @@ export function IssueFilters({ filters, onFilterChange }: IssueFiltersProps) {
           />
         </Grid>
 
-        {/* Category */}
+        {/* Location Search */}
+        {/* @ts-ignore */}
         <Grid item xs={12} md={2}>
-          <FormControl fullWidth>
-            <InputLabel sx={{ color: "#b0b0b0" }}>Kategorija</InputLabel>
-            <Select
-              value={filters.category}
-              onChange={(e) => onFilterChange({ ...filters, category: e.target.value })}
-              sx={{
-                backgroundColor: "#2a2a2a",
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#444",
-                },
-                "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#42a5f5",
-                },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#42a5f5",
-                },
-                "& .MuiSelect-icon": {
-                  color: "#b0b0b0",
-                },
-                "& .MuiSelect-select": {
-                  color: "#fff",
-                },
-              }}
-            >
-              <MenuItem value="all">Sve kategorije</MenuItem>
-              <MenuItem value="voda">Voda</MenuItem>
-              <MenuItem value="struja">Struja</MenuItem>
-              <MenuItem value="grijanje">Grijanje</MenuItem>
-              <MenuItem value="ostalo">Ostalo</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-
-      </Grid>
-
-      {/* Second Row */}
-      <Grid container spacing={3} sx={{ mt: 1 }}>
-        {/* Address Search */}
-        <Grid item xs={12} md={4}>
           <TextField
             fullWidth
-            placeholder="Pretraži po adresi..."
-            value={filters.address}
-            onChange={(e) => onFilterChange({ ...filters, address: e.target.value })}
+            placeholder="Adresa..."
+            value={filters.location}
+            onChange={(e) => onFilterChange({ ...filters, location: e.target.value })}
             InputProps={{
               startAdornment: <SearchIcon sx={{ color: "#42a5f5", mr: 1 }} />,
               sx: {
@@ -197,36 +160,8 @@ export function IssueFilters({ filters, onFilterChange }: IssueFiltersProps) {
           />
         </Grid>
 
-        {/* Contractor Search */}
-        <Grid item xs={12} md={4}>
-          <TextField
-            fullWidth
-            placeholder="Pretraži po izvođaču..."
-            value={filters.contractor}
-            onChange={(e) => onFilterChange({ ...filters, contractor: e.target.value })}
-            InputProps={{
-              startAdornment: <SearchIcon sx={{ color: "#42a5f5", mr: 1 }} />,
-              sx: {
-                backgroundColor: "#2a2a2a",
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#444",
-                },
-                "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#42a5f5",
-                },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#42a5f5",
-                },
-                "& input": {
-                  color: "#fff",
-                },
-                "& input::placeholder": {
-                  color: "#b0b0b0",
-                },
-              },
-            }}
-          />
-        </Grid>
+        {/* Contractor filter removed */}
+
       </Grid>
 
       {/* Clear Filters Button */}

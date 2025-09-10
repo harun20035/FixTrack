@@ -49,7 +49,7 @@ export default function IssueFilters({ searchTerm, selectedCategory, selectedSta
     "Ostalo",
   ]
 
-  const statuses = ["Primljeno", "Dodijeljeno", "U toku", "Čeka dijelove", "Završeno", "Otkazano"]
+  const statuses = ["Primljeno", "Dodijeljeno izvođaču", "U toku", "Čeka dijelove", "Završeno", "Otkazano"]
 
   const handleClearFilters = () => {
     setLocalSearch("");

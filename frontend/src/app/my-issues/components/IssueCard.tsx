@@ -347,7 +347,7 @@ export default function IssueCard({ issue, onStatusChange, onDelete, onEditSucce
     })
   }
 
-  const availableStatuses = ["Primljeno", "Dodijeljeno", "U toku", "Čeka dijelove", "Završeno", "Otkazano"].filter(
+  const availableStatuses = ["Primljeno", "Dodijeljeno izvođaču", "U toku", "Čeka dijelove", "Završeno", "Otkazano"].filter(
     (status) => status !== issue.status,
   )
 

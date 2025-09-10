@@ -40,7 +40,7 @@ export default function StatusSection({ status, issues, count, onStatusChange, o
     switch (status) {
       case "Primljeno":
         return "info"
-      case "Dodijeljeno":
+      case "Dodijeljeno izvođaču":
         return "secondary"
       case "U toku":
         return "primary"
@@ -59,7 +59,7 @@ export default function StatusSection({ status, issues, count, onStatusChange, o
     switch (status) {
       case "Primljeno":
         return "📥"
-      case "Dodijeljeno":
+      case "Dodijeljeno izvođaču":
         return "👤"
       case "U toku":
         return "🔧"

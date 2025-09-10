@@ -32,6 +32,10 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
 import { useState, useEffect, Fragment } from "react"
 import type { Issue } from "../types"
 import { authFetch } from "@/utils/authFetch"
+import TextField from "@mui/material/TextField"
+import DescriptionIcon from "@mui/icons-material/Description"
+import CommentIcon from "@mui/icons-material/Comment"
+import NoteIcon from "@mui/icons-material/Note"
 
 interface IssueCardProps {
   issue: Issue
@@ -46,6 +50,22 @@ export default function IssueCard({ issue, isAssigning }: IssueCardProps) {
   const [assigningToContractor, setAssigningToContractor] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  
+  // Napomene i komentari state
+  const [showNoteModal, setShowNoteModal] = useState(false)
+  const [noteText, setNoteText] = useState("")
+  const [addingNote, setAddingNote] = useState(false)
+  const [showNotesModal, setShowNotesModal] = useState(false)
+  const [notes, setNotes] = useState<any[]>([])
+  const [loadingNotes, setLoadingNotes] = useState(false)
+  const [showCommentsModal, setShowCommentsModal] = useState(false)
+  const [comments, setComments] = useState<any[]>([])
+  const [loadingComments, setLoadingComments] = useState(false)
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error" | "warning" | "info"
+  })
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget)
@@ -54,6 +74,110 @@ export default function IssueCard({ issue, isAssigning }: IssueCardProps) {
   const handleMenuClose = () => {
     setAnchorEl(null)
   }
+
+  // Funkcije za napomene
+  const fetchNotes = async () => {
+    try {
+      const response = await authFetch(`http://localhost:8000/api/manager/issues/${issue.id}/notes`)
+      if (!response.ok) {
+        throw new Error("Greška pri dohvatanju napomena")
+      }
+      const adminNotes = await response.json()
+      setNotes(adminNotes)
+    } catch (error) {
+      console.error("Greška pri dohvatanju napomena:", error)
+      setSnackbar({
+        open: true,
+        message: "Greška pri dohvatanju napomena",
+        severity: "error"
+      })
+    }
+  }
+
+  const handleViewNotes = async () => {
+    handleMenuClose()
+    setLoadingNotes(true)
+    setShowNotesModal(true)
+    await fetchNotes()
+    setLoadingNotes(false)
+  }
+
+  const handleAddNote = async () => {
+    if (!noteText.trim()) return
+    
+    setAddingNote(true)
+    try {
+      const response = await authFetch(`http://localhost:8000/api/manager/issues/${issue.id}/notes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ note: noteText.trim() }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || "Greška pri dodavanju napomene")
+      }
+
+      setShowNoteModal(false)
+      setNoteText("")
+      setSnackbar({
+        open: true,
+        message: "Napomena je uspješno dodana!",
+        severity: "success"
+      })
+      
+      // Osveži napomene ako je modal za napomene otvoren
+      if (showNotesModal) {
+        await fetchNotes()
+      }
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: "Greška pri dodavanju napomene: " + (error instanceof Error ? error.message : "Nepoznata greška"),
+        severity: "error"
+      })
+    } finally {
+      setAddingNote(false)
+    }
+  }
+
+  // Funkcije za komentare
+  const fetchComments = async () => {
+    try {
+      const response = await authFetch(`http://localhost:8000/api/issues/${issue.id}/comments`)
+      if (!response.ok) {
+        throw new Error("Greška pri dohvatanju komentara")
+      }
+      const userComments = await response.json()
+      setComments(userComments)
+    } catch (error) {
+      console.error("Greška pri dohvatanju komentara:", error)
+      setSnackbar({
+        open: true,
+        message: "Greška pri dohvatanju komentara",
+        severity: "error"
+      })
+    }
+  }
+
+  const handleViewComments = async () => {
+    handleMenuClose()
+    setLoadingComments(true)
+    setShowCommentsModal(true)
+    await fetchComments()
+    setLoadingComments(false)
+  }
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }))
+  }
+
+  // Zatvori snackbar kada se issue promeni
+  useEffect(() => {
+    handleCloseSnackbar()
+  }, [issue.id])
 
   const handleAssignClick = async () => {
     setContractorDialogOpen(true)
@@ -306,12 +430,17 @@ export default function IssueCard({ issue, isAssigning }: IssueCardProps) {
             },
           }}
         >
-          <MenuItem onClick={handleMenuClose}>Prikaži detalje</MenuItem>
-          <MenuItem onClick={handleMenuClose}>Dodaj napomenu</MenuItem>
-          <MenuItem onClick={handleMenuClose}>Kontaktiraj stanara</MenuItem>
-          <Divider sx={{ borderColor: "#444" }} />
-          <MenuItem onClick={handleMenuClose} sx={{ color: "#f44336 !important" }}>
-            Odbaci prijavu
+          <MenuItem onClick={() => setShowNoteModal(true)}>
+            <DescriptionIcon sx={{ mr: 1, fontSize: 20 }} />
+            Dodaj napomenu
+          </MenuItem>
+          <MenuItem onClick={handleViewNotes}>
+            <NoteIcon sx={{ mr: 1, fontSize: 20 }} />
+            Pogledaj napomene
+          </MenuItem>
+          <MenuItem onClick={handleViewComments}>
+            <CommentIcon sx={{ mr: 1, fontSize: 20 }} />
+            Pogledaj komentare
           </MenuItem>
         </Menu>
       </CardContent>
@@ -445,6 +574,248 @@ export default function IssueCard({ issue, isAssigning }: IssueCardProps) {
         }}
       >
         {successMessage}
+      </Alert>
+    </Snackbar>
+
+    {/* Note Modal */}
+    <Dialog
+      open={showNoteModal}
+      onClose={() => setShowNoteModal(false)}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          backgroundColor: "#2a2a2a",
+          border: "1px solid #444",
+        },
+      }}
+    >
+      <DialogTitle sx={{ color: "#fff", borderBottom: "1px solid #444" }}>
+        Dodaj napomenu
+      </DialogTitle>
+      <DialogContent sx={{ pt: 2 }}>
+        <Typography variant="body2" sx={{ color: "#b0b0b0", mb: 2 }}>
+          Dodaj napomenu za prijavu: <strong style={{ color: "#fff" }}>{issue.title}</strong>
+        </Typography>
+        
+        <TextField
+          fullWidth
+          multiline
+          rows={4}
+          value={noteText}
+          onChange={(e) => setNoteText(e.target.value)}
+          placeholder="Unesite napomenu..."
+          sx={{
+            "& .MuiOutlinedInput-root": {
+              backgroundColor: "#1e1e1e",
+              "& fieldset": {
+                borderColor: "#444",
+              },
+              "&:hover fieldset": {
+                borderColor: "#42a5f5",
+              },
+              "&.Mui-focused fieldset": {
+                borderColor: "#42a5f5",
+              },
+              "& .MuiInputBase-input": {
+                color: "#fff",
+              },
+              "& .MuiInputBase-input::placeholder": {
+                color: "#666",
+              },
+            },
+          }}
+        />
+      </DialogContent>
+      <DialogActions sx={{ p: 2, borderTop: "1px solid #444" }}>
+        <Button
+          onClick={() => setShowNoteModal(false)}
+          sx={{ color: "#b0b0b0" }}
+        >
+          Odustani
+        </Button>
+        <Button
+          onClick={handleAddNote}
+          disabled={addingNote || !noteText.trim()}
+          variant="contained"
+          sx={{
+            backgroundColor: "#22c55e",
+            "&:hover": {
+              backgroundColor: "#16a34a",
+            },
+            "&:disabled": {
+              backgroundColor: "#666",
+            },
+          }}
+        >
+          {addingNote ? <CircularProgress size={20} /> : "Dodaj napomenu"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+
+    {/* Notes Modal */}
+    <Dialog
+      open={showNotesModal}
+      onClose={() => {
+        setShowNotesModal(false)
+        handleCloseSnackbar()
+      }}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          backgroundColor: "#2a2a2a",
+          color: "#fff",
+          border: "1px solid #444",
+        },
+      }}
+    >
+      <DialogTitle sx={{ color: "#fff", borderBottom: "1px solid #444" }}>
+        Napomene za: {issue.title}
+      </DialogTitle>
+      <DialogContent sx={{ p: 3 }}>
+        {loadingNotes ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : notes.length === 0 ? (
+          <Typography variant="body1" sx={{ color: "#b0b0b0", textAlign: "center", py: 4 }}>
+            Nema napomena za ovaj issue.
+          </Typography>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {notes.map((note, index) => (
+              <Box
+                key={index}
+                sx={{
+                  p: 2,
+                  backgroundColor: "#1a1a1a",
+                  borderRadius: 2,
+                  border: "1px solid #444",
+                }}
+              >
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                  <Typography variant="subtitle2" sx={{ color: "#42a5f5", fontWeight: 600 }}>
+                    {note.admin?.full_name || "Nepoznato"}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "#b0b0b0" }}>
+                    {new Date(note.created_at).toLocaleString("bs-BA")}
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ color: "#fff" }}>
+                  {note.note}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </DialogContent>
+      <DialogActions sx={{ p: 3, borderTop: "1px solid #444" }}>
+        <Button
+          onClick={() => {
+            setShowNotesModal(false)
+            handleCloseSnackbar()
+          }}
+          sx={{
+            color: "#b0b0b0",
+            "&:hover": {
+              backgroundColor: "rgba(66, 165, 245, 0.1)",
+            },
+          }}
+        >
+          Zatvori
+        </Button>
+      </DialogActions>
+    </Dialog>
+
+    {/* Comments Modal */}
+    <Dialog
+      open={showCommentsModal}
+      onClose={() => {
+        setShowCommentsModal(false)
+        handleCloseSnackbar()
+      }}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          backgroundColor: "#2a2a2a",
+          color: "#fff",
+          border: "1px solid #444",
+        },
+      }}
+    >
+      <DialogTitle sx={{ color: "#fff", borderBottom: "1px solid #444" }}>
+        Komentari korisnika za: {issue.title}
+      </DialogTitle>
+      <DialogContent sx={{ p: 3 }}>
+        {loadingComments ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : comments.length === 0 ? (
+          <Typography variant="body1" sx={{ color: "#b0b0b0", textAlign: "center", py: 4 }}>
+            Nema komentara za ovaj issue.
+          </Typography>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {comments.map((comment, index) => (
+              <Box
+                key={index}
+                sx={{
+                  p: 2,
+                  backgroundColor: "#1a1a1a",
+                  borderRadius: 2,
+                  border: "1px solid #444",
+                }}
+              >
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                  <Typography variant="subtitle2" sx={{ color: "#42a5f5", fontWeight: 600 }}>
+                    {comment.user?.full_name || "Nepoznato"}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "#b0b0b0" }}>
+                    {new Date(comment.created_at).toLocaleString("bs-BA")}
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ color: "#fff" }}>
+                  {comment.content}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </DialogContent>
+      <DialogActions sx={{ p: 3, borderTop: "1px solid #444" }}>
+        <Button
+          onClick={() => {
+            setShowCommentsModal(false)
+            handleCloseSnackbar()
+          }}
+          sx={{
+            color: "#b0b0b0",
+            "&:hover": {
+              backgroundColor: "rgba(66, 165, 245, 0.1)",
+            },
+          }}
+        >
+          Zatvori
+        </Button>
+      </DialogActions>
+    </Dialog>
+
+    {/* Snackbar for notifications */}
+    <Snackbar
+      open={snackbar.open}
+      autoHideDuration={6000}
+      onClose={handleCloseSnackbar}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+    >
+      <Alert 
+        onClose={handleCloseSnackbar} 
+        severity={snackbar.severity}
+        sx={{ width: '100%' }}
+      >
+        {snackbar.message}
       </Alert>
     </Snackbar>
     </Fragment>

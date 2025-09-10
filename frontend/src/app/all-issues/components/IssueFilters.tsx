@@ -31,8 +31,7 @@ export default function IssueFilters({ filters, onFilterChange }: IssueFiltersPr
       searchTerm: "",
       dateFrom: "",
       dateTo: "",
-      category: "all",
-      priority: "all",
+      location: "",
     }
     setLocalFilters(clearedFilters)
     onFilterChange(clearedFilters)
@@ -42,6 +41,7 @@ export default function IssueFilters({ filters, onFilterChange }: IssueFiltersPr
     <Box>
       <Grid container spacing={3}>
         {/* Search */}
+        {/* @ts-ignore */}
         <Grid item xs={12} md={4}>
           <TextField
             fullWidth
@@ -65,6 +65,7 @@ export default function IssueFilters({ filters, onFilterChange }: IssueFiltersPr
         </Grid>
 
         {/* Date From */}
+        {/* @ts-ignore */}
         <Grid item xs={12} md={2}>
           <TextField
             fullWidth
@@ -87,6 +88,7 @@ export default function IssueFilters({ filters, onFilterChange }: IssueFiltersPr
         </Grid>
 
         {/* Date To */}
+        {/* @ts-ignore */}
         <Grid item xs={12} md={2}>
           <TextField
             fullWidth
@@ -108,54 +110,31 @@ export default function IssueFilters({ filters, onFilterChange }: IssueFiltersPr
           />
         </Grid>
 
-        {/* Category */}
+        {/* Location */}
+        {/* @ts-ignore */}
         <Grid item xs={12} md={2}>
-          <FormControl fullWidth>
-            <InputLabel sx={{ color: "#b0b0b0" }}>Kategorija</InputLabel>
-            <Select
-              value={localFilters.category}
-              onChange={(e) => handleInputChange("category", e.target.value)}
-              label="Kategorija"
-              sx={{
+          <TextField
+            fullWidth
+            label="Adresa"
+            value={localFilters.location}
+            onChange={(e) => handleInputChange("location", e.target.value)}
+            InputProps={{
+              startAdornment: <SearchIcon sx={{ color: "#42a5f5", mr: 1 }} />,
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
                 backgroundColor: "#2a2a2a",
-                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#444" },
-                "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#42a5f5" },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#42a5f5" },
-                "& .MuiSelect-select": { color: "#fff" },
-              }}
-            >
-              <MenuItem value="all">Sve kategorije</MenuItem>
-              <MenuItem value="voda">Voda</MenuItem>
-              <MenuItem value="struja">Struja</MenuItem>
-              <MenuItem value="grijanje">Grijanje</MenuItem>
-              <MenuItem value="ostalo">Ostalo</MenuItem>
-            </Select>
-          </FormControl>
+                "& fieldset": { borderColor: "#444" },
+                "&:hover fieldset": { borderColor: "#42a5f5" },
+                "&.Mui-focused fieldset": { borderColor: "#42a5f5" },
+              },
+              "& .MuiInputLabel-root": { color: "#b0b0b0" },
+              "& .MuiInputBase-input": { color: "#fff" },
+            }}
+          />
         </Grid>
 
-        {/* Priority */}
-        <Grid item xs={12} md={2}>
-          <FormControl fullWidth>
-            <InputLabel sx={{ color: "#b0b0b0" }}>Prioritet</InputLabel>
-            <Select
-              value={localFilters.priority}
-              onChange={(e) => handleInputChange("priority", e.target.value)}
-              label="Prioritet"
-              sx={{
-                backgroundColor: "#2a2a2a",
-                "& .MuiOutlinedInput-notchedOutline": { borderColor: "#444" },
-                "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#42a5f5" },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#42a5f5" },
-                "& .MuiSelect-select": { color: "#fff" },
-              }}
-            >
-              <MenuItem value="all">Svi prioriteti</MenuItem>
-              <MenuItem value="visok">Visok</MenuItem>
-              <MenuItem value="srednji">Srednji</MenuItem>
-              <MenuItem value="nizak">Nizak</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
+        {/* Contractor filter removed - not applicable for "Primljeno" status issues */}
       </Grid>
 
 

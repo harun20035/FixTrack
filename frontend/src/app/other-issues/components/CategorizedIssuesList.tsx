@@ -68,24 +68,7 @@ export function CategorizedIssuesList({ filters }: CategorizedIssuesListProps) {
       // Dohvati issue-e koji nisu "Primljeno" koristeći novi endpoint
        
        const params = new URLSearchParams()
-       if (filters.searchTerm) {
-         params.append('search', filters.searchTerm)
-       }
-       if (filters.category && filters.category !== 'all') {
-         params.append('category', filters.category)
-       }
-       if (filters.dateFrom) {
-         params.append('date_from', filters.dateFrom)
-       }
-       if (filters.dateTo) {
-         params.append('date_to', filters.dateTo)
-       }
-       if (filters.address) {
-         params.append('address', filters.address)
-       }
-       if (filters.contractor) {
-         params.append('contractor', filters.contractor)
-       }
+       // Client-side filtering, ne šaljemo filtere na backend
        params.append('sort_by', 'created_at_desc')
        params.append('page_size', '50') // Povećaj page_size da prikaže više prijava
        
@@ -114,8 +97,23 @@ export function CategorizedIssuesList({ filters }: CategorizedIssuesListProps) {
     fetchIssues()
   }, [filters, fetchIssues])
 
-  // Koristimo server-side filtering, tako da ne treba client-side filtering
-  const filteredIssues = issues
+  // Client-side filtering
+  const filteredIssues = useMemo(() => {
+    return issues.filter((issue) => {
+      const matchesSearch = !filters.searchTerm || 
+        issue.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        (issue.description && issue.description.toLowerCase().includes(filters.searchTerm.toLowerCase())) ||
+        (issue.tenant?.full_name && issue.tenant.full_name.toLowerCase().includes(filters.searchTerm.toLowerCase()))
+
+      const matchesLocation = !filters.location || 
+        (issue.location && issue.location.toLowerCase().includes(filters.location.toLowerCase()))
+
+      const matchesDateFrom = !filters.dateFrom || issue.created_at >= filters.dateFrom
+      const matchesDateTo = !filters.dateTo || issue.created_at <= filters.dateTo
+
+      return matchesSearch && matchesLocation && matchesDateFrom && matchesDateTo
+    })
+  }, [issues, filters])
 
   const issuesByStatus = useMemo(() => {
     const grouped: Record<string, Issue[]> = {}

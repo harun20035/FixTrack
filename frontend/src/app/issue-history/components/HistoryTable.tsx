@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import type React from "react"
 
 import Box from "@mui/material/Box"
@@ -56,7 +56,9 @@ export default function HistoryTable({ filters, page, setPage, rowsPerPage, setR
   const [loading, setLoading] = useState(true);
   const [selectedIssue, setSelectedIssue] = useState<HistoryIssue | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  useEffect(() => {
+
+  // Debounced fetch function
+  const fetchData = useCallback(() => {
     setLoading(true);
     const token = localStorage.getItem("auth_token");
     const params = new URLSearchParams();
@@ -90,6 +92,20 @@ export default function HistoryTable({ filters, page, setPage, rowsPerPage, setR
       })
       .finally(() => setLoading(false));
   }, [filters, page, rowsPerPage]);
+
+  // Debounce effect for search term only
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchData();
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timeoutId);
+  }, [filters.searchTerm, fetchData]);
+
+  // Immediate effect for non-search filters
+  useEffect(() => {
+    fetchData();
+  }, [filters.category, filters.status, filters.dateFrom, filters.dateTo, filters.sortBy, page, rowsPerPage]);
 
   const getStatusColor = (status: string): 'success' | 'error' | 'primary' | 'warning' | 'default' => {
     switch (status) {

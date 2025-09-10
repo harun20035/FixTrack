@@ -2,9 +2,7 @@ export interface FilterOptions {
   searchTerm: string
   dateFrom: string
   dateTo: string
-  category: "all" | "voda" | "struja" | "grijanje" | "ostalo"
-  address: string
-  contractor: string
+  location: string
 }
 
 export interface Issue {

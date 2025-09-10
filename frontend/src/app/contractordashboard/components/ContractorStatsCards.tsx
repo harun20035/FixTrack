@@ -7,8 +7,6 @@ import AssignmentIcon from "@mui/icons-material/Assignment"
 import LocationOnIcon from "@mui/icons-material/LocationOn"
 import BuildIcon from "@mui/icons-material/Build"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
-import AccessTimeIcon from "@mui/icons-material/AccessTime"
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney"
 import { ContractorStats } from "../../../utils/dashboardApi"
 
 const StatsCard = styled(Card)(({ theme }) => ({
@@ -47,21 +45,9 @@ export default function ContractorStatsCards({ stats }: ContractorStatsCardsProp
     },
     {
       icon: <CheckCircleIcon sx={{ fontSize: 40, color: "#4caf50", mb: 2 }} />,
-      value: stats.completed_this_month.toString(),
-      label: "Završeno (Mjesec)",
+      value: stats.completed_total.toString(),
+      label: "Završeno",
       color: "#4caf50",
-    },
-    {
-      icon: <AccessTimeIcon sx={{ fontSize: 40, color: "#9c27b0", mb: 2 }} />,
-      value: stats.average_resolution_time.toString(),
-      label: "Prosječno Vrijeme (dani)",
-      color: "#9c27b0",
-    },
-    {
-      icon: <AttachMoneyIcon sx={{ fontSize: 40, color: "#ffc107", mb: 2 }} />,
-      value: stats.monthly_earnings.toLocaleString(),
-      label: "Zarada (KM)",
-      color: "#ffc107",
     },
   ]
 
@@ -72,8 +58,8 @@ export default function ContractorStatsCards({ stats }: ContractorStatsCardsProp
         gridTemplateColumns: {
           xs: "1fr",
           sm: "repeat(2, 1fr)",
-          md: "repeat(3, 1fr)",
-          lg: "repeat(6, 1fr)",
+          md: "repeat(4, 1fr)",
+          lg: "repeat(4, 1fr)",
         },
         gap: 3,
         mb: 4,

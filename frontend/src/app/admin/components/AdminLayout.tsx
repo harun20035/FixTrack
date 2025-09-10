@@ -1,10 +1,9 @@
 "use client"
 import { Box, Container, Paper, Typography, Grid, AppBar, Toolbar, Button, SvgIcon, type SvgIconProps } from "@mui/material"
-import { Logout } from "@mui/icons-material"
+import { Logout, Person } from "@mui/icons-material"
 import { useRouter } from "next/navigation"
 import RoleRequests from "./RoleRequests"
 import UserManagement from "./UserManagement"
-import SystemSettings from "./SystemSettings"
 import SurveyManagement from "./SurveyManagement"
 
 function FixTrackIcon(props: SvgIconProps) {
@@ -27,6 +26,10 @@ export default function AdminLayout() {
     localStorage.removeItem("auth_token")
     localStorage.removeItem("auth_token_exp")
     router.push("/login")
+  }
+
+  const handleProfile = () => {
+    router.push("/profile")
   }
 
   return (
@@ -71,22 +74,40 @@ export default function AdminLayout() {
             </Typography>
           </Box>
           
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<Logout />}
-            onClick={handleLogout}
-            sx={{
-              borderColor: "#f44336",
-              color: "#f44336",
-              "&:hover": {
-                borderColor: "#d32f2f",
-                backgroundColor: "rgba(244, 67, 54, 0.04)",
-              },
-            }}
-          >
-            Odjavi se
-          </Button>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<Person />}
+              onClick={handleProfile}
+              sx={{
+                borderColor: "#42a5f5",
+                color: "#42a5f5",
+                "&:hover": {
+                  borderColor: "#1976d2",
+                  backgroundColor: "rgba(66, 165, 245, 0.04)",
+                },
+              }}
+            >
+              Profil
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<Logout />}
+              onClick={handleLogout}
+              sx={{
+                borderColor: "#f44336",
+                color: "#f44336",
+                "&:hover": {
+                  borderColor: "#d32f2f",
+                  backgroundColor: "rgba(244, 67, 54, 0.04)",
+                },
+              }}
+            >
+              Odjavi se
+            </Button>
+          </Box>
         </Toolbar>
       </AppBar>
 
@@ -114,16 +135,9 @@ export default function AdminLayout() {
             <SurveyManagement />
           </Grid>
 
-          {/* User Management & System Settings */}
+          {/* User Management */}
           <Grid item xs={12} lg={12}>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <UserManagement />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <SystemSettings />
-              </Grid>
-            </Grid>
+            <UserManagement />
           </Grid>
         </Grid>
       </Container>

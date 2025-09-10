@@ -52,18 +52,7 @@ export default function IssuesList({ filters }: IssuesListProps) {
         const params = new URLSearchParams()
         params.append('status', 'Primljeno')
         
-      if (filters.searchTerm) {
-          params.append('search', filters.searchTerm)
-        }
-        if (filters.category && filters.category !== 'all') {
-          params.append('category', filters.category)
-        }
-        if (filters.dateFrom) {
-          params.append('date_from', filters.dateFrom)
-        }
-        if (filters.dateTo) {
-          params.append('date_to', filters.dateTo)
-        }
+        // Client-side filtering, ne šaljemo filtere na backend
         params.append('sort_by', 'created_at_desc')
         params.append('page_size', '50') // Povećaj page_size da prikaže više prijava
         
@@ -77,21 +66,26 @@ export default function IssuesList({ filters }: IssuesListProps) {
         
         // Transformiraj podatke u format koji očekuje frontend
         const transformedIssues: Issue[] = data.map((issue: any) => ({
-          id: issue.id.toString(),
-          title: issue.title,
-          description: issue.description || '',
-          category: issue.category?.name || 'ostalo',
-          priority: 'srednji', // Backend ne podržava priority još
-          status: issue.status,
-          createdAt: issue.created_at,
-          tenant: {
-            name: issue.tenant?.full_name || 'Nepoznato',
-            apartment: issue.tenant?.address || 'Nepoznato',
-            phone: issue.tenant?.phone || 'Nepoznato',
-          },
-          location: issue.location || 'Nepoznato',
-          images: issue.images?.map((img: any) => `http://localhost:8000/${img.image_url}`) || [],
-        }))
+            id: issue.id.toString(),
+            title: issue.title,
+            description: issue.description || '',
+            category: issue.category?.name || 'ostalo',
+            priority: 'srednji', // Backend ne podržava priority još
+            status: issue.status,
+            createdAt: issue.created_at,
+            tenant: {
+              name: issue.tenant?.full_name || 'Nepoznato',
+              apartment: issue.tenant?.address || 'Nepoznato',
+              phone: issue.tenant?.phone || 'Nepoznato',
+            },
+            location: issue.location || 'Nepoznato',
+            images: issue.images?.map((img: any) => `http://localhost:8000/${img.image_url}`) || [],
+            contractor: issue.contractor ? {
+              name: issue.contractor.full_name || issue.contractor.name || 'Nepoznato',
+              phone: issue.contractor.phone || 'Nepoznato',
+              specialization: issue.contractor.specialization || 'Nepoznato'
+            } : undefined
+          }))
         
         setIssues(transformedIssues)
       } catch (err) {
@@ -104,6 +98,24 @@ export default function IssuesList({ filters }: IssuesListProps) {
 
     fetchIssues()
   }, [filters])
+
+  // Client-side filtering
+  const filteredIssues = useMemo(() => {
+    return issues.filter((issue) => {
+      const matchesSearch = !filters.searchTerm || 
+        issue.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        (issue.description && issue.description.toLowerCase().includes(filters.searchTerm.toLowerCase())) ||
+        (issue.tenant?.name && issue.tenant.name.toLowerCase().includes(filters.searchTerm.toLowerCase()))
+
+      const matchesLocation = !filters.location || 
+        (issue.location && issue.location.toLowerCase().includes(filters.location.toLowerCase()))
+
+      const matchesDateFrom = !filters.dateFrom || issue.createdAt >= filters.dateFrom
+      const matchesDateTo = !filters.dateTo || issue.createdAt <= filters.dateTo
+
+      return matchesSearch && matchesLocation && matchesDateFrom && matchesDateTo
+    })
+  }, [issues, filters])
 
   const handleAssignContractor = async (issueId: string) => {
     setSelectedIssueId(issueId)
@@ -203,11 +215,11 @@ export default function IssuesList({ filters }: IssuesListProps) {
   return (
     <Box>
       <Typography variant="h6" sx={{ color: "#42a5f5", mb: 3, fontWeight: 600 }}>
-        Pronađeno {issues.length} prijava sa statusom "Primljeno"
+        Pronađeno {filteredIssues.length} prijava sa statusom "Primljeno"
       </Typography>
 
       <Grid container spacing={3}>
-        {issues.map((issue) => (
+        {filteredIssues.map((issue) => (
           <Grid item xs={12} lg={6} key={issue.id}>
             <IssueCard
               issue={issue}

@@ -7,8 +7,6 @@ import ListAltIcon from "@mui/icons-material/ListAlt"
 import PendingIcon from "@mui/icons-material/Pending"
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import BuildIcon from "@mui/icons-material/Build"
-import AccessTimeIcon from "@mui/icons-material/AccessTime"
-import TrendingUpIcon from "@mui/icons-material/TrendingUp"
 import { ManagerStats } from "../../../utils/dashboardApi"
 
 const StatsCard = styled(Card)(({ theme }) => ({
@@ -22,52 +20,43 @@ const StatsCard = styled(Card)(({ theme }) => ({
 }))
 
 interface ManagerStatsCardsProps {
-  stats: ManagerStats
+  stats: ManagerStats | null
 }
 
 export default function ManagerStatsCards({ stats }: ManagerStatsCardsProps) {
+  // Provjeri da li stats postoji i ima potrebne properties
+  if (!stats) {
+    return null
+  }
+
   const statsData = [
     {
       icon: <ListAltIcon sx={{ fontSize: 40, color: "#42a5f5", mb: 2 }} />,
-      value: stats.total_issues.toString(),
+      value: (stats.total_issues ?? 0).toString(),
       label: "Ukupno Prijava",
-      subtitle: "Ovaj mjesec",
+      subtitle: "Za sve vrijeme",
       color: "#42a5f5",
     },
     {
       icon: <PendingIcon sx={{ fontSize: 40, color: "#ff9800", mb: 2 }} />,
-      value: stats.pending_assignment.toString(),
+      value: (stats.pending_assignment ?? 0).toString(),
       label: "Na Čekanju",
       subtitle: "Potrebna dodjela",
       color: "#ff9800",
     },
     {
       icon: <BuildIcon sx={{ fontSize: 40, color: "#f44336", mb: 2 }} />,
-      value: stats.in_progress.toString(),
+      value: (stats.in_progress ?? 0).toString(),
       label: "U Toku",
       subtitle: "Aktivni zadaci",
       color: "#f44336",
     },
     {
       icon: <CheckCircleIcon sx={{ fontSize: 40, color: "#4caf50", mb: 2 }} />,
-      value: stats.completed_this_month.toString(),
+      value: (stats.completed_total ?? 0).toString(),
       label: "Završeno",
-      subtitle: "Ovaj mjesec",
+      subtitle: "Ukupno",
       color: "#4caf50",
-    },
-    {
-      icon: <AccessTimeIcon sx={{ fontSize: 40, color: "#9c27b0", mb: 2 }} />,
-      value: stats.average_resolution_time.toString(),
-      label: "Prosječno Vrijeme",
-      subtitle: "dana rješavanja",
-      color: "#9c27b0",
-    },
-    {
-      icon: <TrendingUpIcon sx={{ fontSize: 40, color: "#ffc107", mb: 2 }} />,
-      value: `${stats.success_rate}%`,
-      label: "Uspješnost",
-      subtitle: "riješenih kvarova",
-      color: "#ffc107",
     },
   ]
 
@@ -78,8 +67,8 @@ export default function ManagerStatsCards({ stats }: ManagerStatsCardsProps) {
         gridTemplateColumns: {
           xs: "1fr",
           sm: "repeat(2, 1fr)",
-          md: "repeat(3, 1fr)",
-          lg: "repeat(6, 1fr)",
+          md: "repeat(4, 1fr)",
+          lg: "repeat(4, 1fr)",
         },
         gap: 3,
         mb: 4,

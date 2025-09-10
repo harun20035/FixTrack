@@ -27,6 +27,5 @@ export interface FilterOptions {
   searchTerm: string
   dateFrom: string
   dateTo: string
-  category: "all" | "voda" | "struja" | "grijanje" | "ostalo"
-  priority: "all" | "visok" | "srednji" | "nizak"
+  location: string
 }

@@ -10,7 +10,6 @@ import Chip from "@mui/material/Chip"
 import { styled } from "@mui/material/styles"
 import LocationOnIcon from "@mui/icons-material/LocationOn"
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday"
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney"
 import { ContractorIssue } from "../../../utils/dashboardApi"
 
 const IssueCard = styled(Card)(({ theme }) => ({
@@ -53,18 +52,6 @@ export default function AssignedIssues({ assignedIssues }: AssignedIssuesProps) 
     }
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "Visok":
-        return "#f44336"
-      case "Srednji":
-        return "#ff9800"
-      case "Nizak":
-        return "#4caf50"
-      default:
-        return "#42a5f5"
-    }
-  }
 
   return (
     <Box>
@@ -87,15 +74,6 @@ export default function AssignedIssues({ assignedIssues }: AssignedIssuesProps) 
                     size="small"
                     variant="outlined"
                   />
-                  <Chip
-                    label={issue.priority}
-                    size="small"
-                    sx={{
-                      backgroundColor: getPriorityColor(issue.priority),
-                      color: "white",
-                    }}
-                  />
-                  <Chip label={issue.category} size="small" variant="outlined" sx={{ borderColor: "#42a5f5" }} />
                 </Box>
               </Box>
             </Box>
@@ -119,14 +97,6 @@ export default function AssignedIssues({ assignedIssues }: AssignedIssuesProps) 
                   Dodijeljeno: {formatDate(issue.assigned_at)}
                 </Typography>
               </Box>
-              {issue.estimated_cost && (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <AttachMoneyIcon sx={{ fontSize: 16, color: "#42a5f5" }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Procjena: {issue.estimated_cost} KM
-                  </Typography>
-                </Box>
-              )}
               {issue.planned_date && (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <CalendarTodayIcon sx={{ fontSize: 16, color: "#42a5f5" }} />

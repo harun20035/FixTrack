@@ -31,6 +31,8 @@ import PersonIcon from "@mui/icons-material/Person"
 import MoreVertIcon from "@mui/icons-material/MoreVert"
 import SyncIcon from "@mui/icons-material/Sync"
 import DescriptionIcon from "@mui/icons-material/Description"
+import NoteIcon from "@mui/icons-material/Note"
+import CommentIcon from "@mui/icons-material/Comment"
 import { authFetch } from "@/utils/authFetch"
 import type { Issue } from "../types"
 
@@ -504,10 +506,16 @@ export function IssueCard({ issue, onStatusChange }: IssueCardProps) {
             },
           }}
         >
+        <MenuItem onClick={() => setShowNoteModal(true)}>
+          <DescriptionIcon sx={{ mr: 1, fontSize: 20 }} />
+          Dodaj napomenu
+        </MenuItem>
         <MenuItem onClick={handleViewNotes}>
+          <NoteIcon sx={{ mr: 1, fontSize: 20 }} />
           Pogledaj napomene
         </MenuItem>
         <MenuItem onClick={handleViewComments}>
+          <CommentIcon sx={{ mr: 1, fontSize: 20 }} />
           Pogledaj komentare
         </MenuItem>
         </Menu>
