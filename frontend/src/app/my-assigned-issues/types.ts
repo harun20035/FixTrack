@@ -2,8 +2,7 @@ export interface FilterState {
   search: string
   dateFrom: string
   dateTo: string
-  category: string
-  priority: string
+  location: string
   status: string
 }
 

@@ -59,6 +59,9 @@ export default function IssuesList({ filters }: IssuesListProps) {
   }, [])
 
   const filteredAssignments = useMemo(() => {
+    console.log("🔍 Filtering assignments with filters:", filters)
+    console.log("📊 Total assignments:", assignments.length)
+    
     return assignments.filter((assignment) => {
       const issue = assignment.issue
       if (!issue) return false
@@ -69,13 +72,23 @@ export default function IssuesList({ filters }: IssuesListProps) {
         (issue.description && issue.description.toLowerCase().includes(filters.search.toLowerCase())) ||
         (issue.tenant?.full_name && issue.tenant.full_name.toLowerCase().includes(filters.search.toLowerCase()))
 
-      const matchesCategory = !filters.category || (issue.category?.name === filters.category)
+      const matchesLocation = !filters.location || (issue.location && issue.location.toLowerCase().includes(filters.location.toLowerCase()))
       const matchesStatus = !filters.status || issue.status === filters.status
 
       const matchesDateFrom = !filters.dateFrom || issue.created_at >= filters.dateFrom
       const matchesDateTo = !filters.dateTo || issue.created_at <= filters.dateTo
 
-      return matchesSearch && matchesCategory && matchesStatus && matchesDateFrom && matchesDateTo
+      // Debug log za status
+      if (filters.status) {
+        console.log(`🔍 Status filter: "${filters.status}" vs Issue status: "${issue.status}" - Match: ${matchesStatus}`)
+      }
+
+      // Debug log za lokaciju
+      if (filters.location) {
+        console.log(`🔍 Location filter: "${filters.location}" vs Issue location: "${issue.location}" - Match: ${matchesLocation}`)
+      }
+
+      return matchesSearch && matchesLocation && matchesStatus && matchesDateFrom && matchesDateTo
     })
   }, [assignments, filters])
 
@@ -113,7 +126,7 @@ export default function IssuesList({ filters }: IssuesListProps) {
         </Typography>
         <Typography variant="body2" sx={{ color: "#666" }}>
           {filters.search ||
-          filters.category ||
+          filters.location ||
           filters.status ||
           filters.dateFrom ||
           filters.dateTo

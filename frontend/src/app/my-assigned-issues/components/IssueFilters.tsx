@@ -1,6 +1,6 @@
 "use client"
 
-import { TextField, Select, MenuItem, FormControl, InputLabel, Button, Grid } from "@mui/material"
+import { TextField, MenuItem, Button, Grid } from "@mui/material"
 import SearchIcon from "@mui/icons-material/Search"
 import ClearIcon from "@mui/icons-material/Clear"
 import type { FilterState } from "../types"
@@ -20,18 +20,14 @@ export default function IssueFilters({ filters, onFiltersChange }: IssueFiltersP
       search: "",
       dateFrom: "",
       dateTo: "",
-      category: "",
-      priority: "",
+      location: "",
       status: "",
     })
   }
 
   return (
-    // @ts-ignore
-    <Grid container spacing={2} alignItems="center">
-      {/* @ts-ignore */}
-      {/* @ts-ignore */}
-      <Grid item xs={12} md={2}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+      <div style={{ flex: '1', minWidth: '200px' }}>
         <TextField
           fullWidth
           placeholder="Pretraži..."
@@ -50,10 +46,9 @@ export default function IssueFilters({ filters, onFiltersChange }: IssueFiltersP
             },
           }}
         />
-      </Grid>
+      </div>
 
-      {/* @ts-ignore */}
-      <Grid item xs={12} md={2}>
+      <div style={{ flex: '1', minWidth: '200px' }}>
         <TextField
           fullWidth
           type="date"
@@ -72,10 +67,9 @@ export default function IssueFilters({ filters, onFiltersChange }: IssueFiltersP
             },
           }}
         />
-      </Grid>
+      </div>
 
-      {/* @ts-ignore */}
-      <Grid item xs={12} md={2}>
+      <div style={{ flex: '1', minWidth: '200px' }}>
         <TextField
           fullWidth
           type="date"
@@ -94,84 +88,60 @@ export default function IssueFilters({ filters, onFiltersChange }: IssueFiltersP
             },
           }}
         />
-      </Grid>
+      </div>
 
-      {/* @ts-ignore */}
-      <Grid item xs={12} md={2}>
-        <FormControl fullWidth>
-          <InputLabel sx={{ color: "#b0b0b0" }}>Kategorija</InputLabel>
-          <Select
-            value={filters.category}
-            onChange={(e) => handleFilterChange("category", e.target.value)}
-            sx={{
+      <div style={{ flex: '1', minWidth: '200px' }}>
+        <TextField
+          fullWidth
+          placeholder="Lokacija..."
+          value={filters.location || ""}
+          onChange={(e) => handleFilterChange("location", e.target.value)}
+          InputProps={{
+            startAdornment: <SearchIcon sx={{ color: "#666", mr: 1 }} />,
+            sx: {
+              bgcolor: "#1e1e1e",
+              "& .MuiOutlinedInput-root": {
+                color: "#fff",
+                "& fieldset": { borderColor: "#444" },
+                "&:hover fieldset": { borderColor: "#666" },
+                "&.Mui-focused fieldset": { borderColor: "#42a5f5" },
+              },
+            },
+          }}
+        />
+      </div>
+
+      <div style={{ flex: '1', minWidth: '200px' }}>
+        <TextField
+          fullWidth
+          select
+          label="Status"
+          value={filters.status}
+          onChange={(e) => handleFilterChange("status", e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          sx={{
+            "& .MuiInputLabel-root": { color: "#b0b0b0" },
+            "& .MuiOutlinedInput-root": {
               bgcolor: "#1e1e1e",
               color: "#fff",
-              "& .MuiOutlinedInput-notchedOutline": { borderColor: "#444" },
-              "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#666" },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#42a5f5" },
-            }}
-          >
-            <MenuItem value="">Sve</MenuItem>
-            <MenuItem value="voda">Voda</MenuItem>
-            <MenuItem value="struja">Struja</MenuItem>
-            <MenuItem value="grijanje">Grijanje</MenuItem>
-            <MenuItem value="ostalo">Ostalo</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
+              "& fieldset": { borderColor: "#444" },
+              "&:hover fieldset": { borderColor: "#666" },
+              "&.Mui-focused fieldset": { borderColor: "#42a5f5" },
+            },
+          }}
+        >
+          <MenuItem value="">Svi statusi</MenuItem>
+          <MenuItem value="Primljeno">Primljeno</MenuItem>
+          <MenuItem value="Dodijeljeno izvođaču">Dodijeljeno izvođaču</MenuItem>
+          <MenuItem value="Na lokaciji">Na lokaciji</MenuItem>
+          <MenuItem value="Popravka u toku">Popravka u toku</MenuItem>
+          <MenuItem value="Čeka dijelove">Čeka dijelove</MenuItem>
+          <MenuItem value="Završeno">Završeno</MenuItem>
+          <MenuItem value="Otkazano">Otkazano</MenuItem>
+        </TextField>
+      </div>
 
-      {/* @ts-ignore */}
-      <Grid item xs={12} md={2}>
-        <FormControl fullWidth>
-          <InputLabel sx={{ color: "#b0b0b0" }}>Prioritet</InputLabel>
-          <Select
-            value={filters.priority}
-            onChange={(e) => handleFilterChange("priority", e.target.value)}
-            sx={{
-              bgcolor: "#1e1e1e",
-              color: "#fff",
-              "& .MuiOutlinedInput-notchedOutline": { borderColor: "#444" },
-              "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#666" },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#42a5f5" },
-            }}
-          >
-            <MenuItem value="">Svi</MenuItem>
-            <MenuItem value="visok">Visok</MenuItem>
-            <MenuItem value="srednji">Srednji</MenuItem>
-            <MenuItem value="nizak">Nizak</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
-
-      {/* @ts-ignore */}
-      <Grid item xs={12} md={2}>
-        <FormControl fullWidth>
-          <InputLabel sx={{ color: "#b0b0b0" }}>Status</InputLabel>
-          <Select
-            value={filters.status}
-            onChange={(e) => handleFilterChange("status", e.target.value)}
-            sx={{
-              bgcolor: "#1e1e1e",
-              color: "#fff",
-              "& .MuiOutlinedInput-notchedOutline": { borderColor: "#444" },
-              "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#666" },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#42a5f5" },
-            }}
-          >
-            <MenuItem value="">Svi</MenuItem>
-            <MenuItem value="Primljeno">Primljeno</MenuItem>
-            <MenuItem value="Dodijeljeno izvođaču">Dodijeljeno izvođaču</MenuItem>
-            <MenuItem value="Na lokaciji">Na lokaciji</MenuItem>
-            <MenuItem value="Popravka u toku">Popravka u toku</MenuItem>
-            <MenuItem value="Čeka dijelove">Čeka dijelove</MenuItem>
-            <MenuItem value="Završeno">Završeno</MenuItem>
-            <MenuItem value="Otkazano">Otkazano</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
-
-      {/* @ts-ignore */}
-      <Grid item xs={12}>
+      <div style={{ flex: '0 0 auto' }}>
         <Button
           variant="outlined"
           startIcon={<ClearIcon />}
@@ -187,7 +157,7 @@ export default function IssueFilters({ filters, onFiltersChange }: IssueFiltersP
         >
           Obriši Filtere
         </Button>
-      </Grid>
-    </Grid>
+      </div>
+    </div>
   )
 }
