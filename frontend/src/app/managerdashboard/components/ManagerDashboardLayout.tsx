@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type React from "react"
 import Box from "@mui/material/Box"
 import AppBar from "@mui/material/AppBar"
@@ -12,6 +12,7 @@ import ListAltIcon from "@mui/icons-material/ListAlt"
 import ListIcon from "@mui/icons-material/List"
 import PeopleIcon from "@mui/icons-material/People"
 import { useRouter, usePathname } from "next/navigation"
+import { authFetch } from "../../../utils/authFetch"
 import ManagerSidebar, {
   drawerWidth,
   type MenuItem,
@@ -24,8 +25,39 @@ interface ManagerDashboardLayoutProps {
 
 export default function ManagerDashboardLayout({ children }: ManagerDashboardLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [userInfo, setUserInfo] = useState<UserInfo>({
+    name: "Upravnik",
+    role: "Upravnik",
+    avatar: "U",
+  })
   const router = useRouter()
   const pathname = usePathname()
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
+        if (!token) return
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        
+        if (response.ok) {
+          const userData = await response.json()
+          setUserInfo({
+            name: userData.full_name || "Upravnik",
+            role: userData.role?.name || "Upravnik",
+            avatar: userData.full_name ? userData.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase() : "U",
+          })
+        }
+      } catch (error) {
+        console.error("Greška pri dohvatanju korisničkih podataka:", error)
+      }
+    }
+
+    fetchUserProfile()
+  }, [])
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -46,12 +78,6 @@ export default function ManagerDashboardLayout({ children }: ManagerDashboardLay
     { text: "Sve Prijave - Ostalo", icon: <ListIcon />, path: "/other-issues" },
     { text: "Stanari", icon: <PeopleIcon />, path: "/tenants" },
   ]
-
-  const userInfo: UserInfo = {
-    name: "Marko Petrović",
-    role: "Upravnik",
-    avatar: "MP",
-  }
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "#121212" }}>
