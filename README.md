@@ -49,7 +49,7 @@ Stanari mogu prijaviti kvar sa sljedećim informacijama:
 - Priložene slike
 - Prioritet
 
-![Prijava kvara](screenshots/prijava_kvara.png)
+![Prijava kvara](documentation/screenshots/prijava_kvara.png)
 
 ### Dashboard za stanare
 Stanari imaju pristup dashboard-u gdje mogu:
@@ -58,7 +58,7 @@ Stanari imaju pristup dashboard-u gdje mogu:
 - Komunicirati kroz komentare
 - Pregledati notifikacije
 
-![Stanar dashboard](screenshots/stanar_dashboard.png)
+![Stanar dashboard](documentation/screenshots/stanar_dashboard.png)
 
 ### Dashboard za upravnike
 Upravnici imaju kompletan pregled sistema:
@@ -68,7 +68,7 @@ Upravnici imaju kompletan pregled sistema:
 - Mijenjanje statusa prijava
 - Statistike i izvještaji
 
-![Upravnik dashboard](screenshots/upravnik_dashboard.png)
+![Upravnik dashboard](documentation/screenshots/upravnik_dashboard.png)
 
 ### Dashboard za izvođače
 Izvođači mogu:
@@ -77,7 +77,7 @@ Izvođači mogu:
 - Uploadovati dokumentaciju
 - Komunicirati sa stanarima
 
-![Izvođač dashboard](screenshots/izvodjac_dashboard.png)
+![Izvođač dashboard](documentation/screenshots/izvodjac_dashboard.png)
 
 ### Pregled dodijeljenih prijava
 Izvođači mogu detaljno pregledati sve dodijeljene prijave sa mogućnostima:
@@ -85,7 +85,7 @@ Izvođači mogu detaljno pregledati sve dodijeljene prijave sa mogućnostima:
 - Sortiranja po datumu
 - Pregleda detalja svake prijave
 
-![Dodijeljene prijave](screenshots/dodijeljene_prijave.png)
+![Dodijeljene prijave](documentation/screenshots/dodijeljene_prijave.png)
 
 ### Detaljni pregled prijave
 Svaki korisnik može pregledati detaljne informacije o prijavi:
@@ -94,13 +94,13 @@ Svaki korisnik može pregledati detaljne informacije o prijavi:
 - Komentare i komunikaciju
 - Historiju promjena statusa
 
-![Pregled prijave](screenshots/pregled_prijave.png)
+![Pregled prijave](documentation/screenshots/pregled_prijave.png)
 
 ## 4. Autentifikacija i sigurnost
 
 Sistem koristi JWT (JSON Web Token) autentifikaciju za sigurno upravljanje sesijama korisnika. Svaki korisnik se mora prijaviti prije pristupa sistemu.
 
-![Login stranica](screenshots/login_page.png)
+![Login stranica](documentation/screenshots/login_page.png)
 
 ### Sigurnosne mjere
 - Hash-ovane lozinke
